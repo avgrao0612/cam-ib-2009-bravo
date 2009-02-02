@@ -14,18 +14,19 @@ public class Board {
 
 	final static byte NONE = -1; // 0xFF
 
-	Piece board[] = new Piece[64];
+	Piece board[] = new Piece[256];
 	boolean next; // next mover
 
 	// initialise a starting board
 	public Board() {
 
-		byte[] black = {0, 2, 4, 6, 17, 19, 21, 23, 32, 34, 36, 38};
+		//byte[] black = {0, 2, 4, 6, 17, 19, 21, 23, 32, 34, 36, 38};
+		// squares across the centre from each other add to 119
 		byte[] red = {119, 117, 115, 113, 102, 100, 98, 96, 87, 85, 83, 81};
 
-		for (int i=0; i<black.length; ++i) {
-			board[i<<1] = new Piece((byte)i, false, black[i]);
-			board[(i<<1)+1] = new Piece((byte)i, true, red[i]);
+		for (int i=0; i<red.length; ++i) {
+			board[119-red[i]] = new Piece((byte)i, false, (byte)(119-red[i]));
+			board[red[i]] = new Piece((byte)i, true, red[i]);
 		}
 
 	}
@@ -35,21 +36,49 @@ public class Board {
 		return (pos & OUT) == 0;
 	}
 
-	/*public static byte pos(byte start, boolean side, boolean hor, boolean ver) {
+	/* calculates the new position of a move from start
+	**
+	** side: which side the piece is on (0:black, 1:red)
+	** hor: horizontal direction W.R.T. the player (0:left, 1:right)
+	** ver: vertical direction W.R.T the player (0:backwards, 1:forwards)
+	** jump: whether the move is a jump (0:move, 1:jump)
+	*/
+	public static byte posOf(byte start, boolean side, boolean hor, boolean ver, boolean jump) {
 
 		if (!inPlay(start)) { return NONE; }
-		byte offset = (side)?
-			((hor == ver)? -17: -15):
-			((hor == ver)? 17: 15);
+		int offset = (hor == ver)? 17: 15;
+		int dir = (side == ver)? -1: 1;
 
-	}*/
+		byte newpos = (byte)(start + (jump?2:1)*offset*dir);
+		if (!inPlay(newpos)) { return NONE; }
+
+		return newpos;
+	}
 
 
 	public HashSet<Turn> getValidTurns(boolean[] newpos)  {
 
+		HashSet<Turn> hs = new HashSet<Turn>();
 
-		return new HashSet<Turn>();
+		for (Piece i : board) {
 
+			if (i == null || i.side != next) { continue; }
+
+			// check moves forwards
+			//if (pos(i.pos, next, false;
+
+			// if king, check moves backwards
+
+
+			// if not king, check jumps forwards
+				// if there are, then for each of them, check all jumps
+			// else check all jumps
+				// if there are, then for each of them, check all jumps
+
+
+		}
+
+		return hs;
 
 	}
 
@@ -83,13 +112,6 @@ public class Board {
 					 = (y<<4) + x
 		*/
 
-		char[] pieces = new char[255];
-
-		for (Piece i : board) {
-			if (i == null) continue;
-			pieces[i.pos] = (i.side)? 'R': 'B';
-		}
-
 		int[] c = {8, 0, 1, 2, 3, 4, 5, 6, 7, 9};
 		String rowsep = "+---+---+---+---+---+---+---+---+---+---+\n";
 
@@ -105,8 +127,8 @@ public class Board {
 			for (int j=0; j<c.length; ++j) {
 				x = c[j];
 
-				ch = pieces[(y<<4)+x];
-				if (ch == '\0') { ch = ' '; }
+				ch = (board[(y<<4)+x] == null)? ' ':
+					(board[(y<<4)+x].side)? 'R': 'B';
 				out.append(" ").append(ch).append(" |");
 
 			}
