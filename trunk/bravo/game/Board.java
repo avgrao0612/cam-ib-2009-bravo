@@ -113,7 +113,7 @@ public class Board {
 
 	// whether a given position is on the king row
 	public boolean levelUp(byte pos) {
-		return inPlay(pos) && ((who)? (pos & KING_ROW) == 0: (pos & KING_ROW) == KING_ROW);
+		return inPlay(pos) && ((who)? ((pos & KING_ROW) == 0): ((pos & KING_ROW) == KING_ROW));
 	}
 
 
@@ -218,7 +218,7 @@ public class Board {
 			}
 		}
 
-		return new Turn[]{new Turn(src, pos, cptr)};
+		return (pos != src)? new Turn[]{new Turn(src, pos, cptr)}: new Turn[]{};
 	}
 	private Turn[] getAvailableJumps(byte src) {
 		return getAvailableJumps(src, NONE, src, new byte[]{});
@@ -307,8 +307,8 @@ public class Board {
 	// t is ASSUMED to be a valid turn
 	private boolean validateStateSkel(Turn t, byte[] changes, byte[] removals) {
 
-		for (byte b : changes) { System.out.print("0x" + Integer.toHexString(b) + " "); }
-		System.out.print("| " + t + "\n");
+		/*for (byte b : changes) { System.out.print("0x" + Integer.toHexString(b) + " "); }
+		System.out.print("| " + t + "\n");*/
 
 		Arrays.fill(removals, NONE);
 		boolean[] done = new boolean[changes.length];
@@ -366,6 +366,7 @@ public class Board {
 	public Board startGame(Player b, Player w) {
 		black = b.sit(this, false);
 		white = w.sit(this, true);
+		System.out.print(this);
 		return setValidTurns();
 	}
 
@@ -380,17 +381,35 @@ public class Board {
 
 	// TODO executes Turn t, updating the board with the new positions
 	public Board updateBoard(Turn t) {
-		System.out.print(this);
-		System.out.print(t);
+		System.out.print(t + "                      \n");
 		assert(vt.contains(t));
 
-		setValidTurns();
+		// move from src to dst
+		board[t.dst] = board[t.src];
+		board[t.dst].pos = t.dst;
+		board[t.src] = null;
+
+		// king it
+		if (!board[t.dst].isKing() && levelUp(t.dst)) {
+			board[t.dst].toKing();
+		}
+
+		// remove captured pieces
+		for (byte b : t.capt) {
+			killPiece(b);
+		}
+
 		who = !who;
+		setValidTurns();
+		System.out.print(this);
+		// for (Turn tt : vt) { System.out.println(tt); }
 		return this;
 	}
 
-	// TODO kill a piece and put it in some cell in the dead area
-	private byte killPiece(Piece p) {
+	// kill a piece and put it in some cell in the dead area
+	private byte killPiece(byte pos) {
+		// TODO make this move it to a dead cell, instead of just setting to null
+		board[pos] = null;
 		return NONE;
 	}
 
