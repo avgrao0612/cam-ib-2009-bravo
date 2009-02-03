@@ -10,7 +10,7 @@ public class Draughts {
 	public static void main(String[] args) {
 
 		GameBoard = new Board();
-		Piece a = GameBoard.board[0];
+		Piece a = GameBoard.board[87];
 		a.flags = -1;
 		System.out.println(a.isDead()? "yes": "no");
 		System.out.println(a.isKing()? "yes": "no");
@@ -20,10 +20,20 @@ public class Draughts {
 		System.out.printf("0x%x\n", b);
 		b += 2;
 		System.out.printf("0x%x\n", b);
-
-		System.out.printf("0x%x\n", (1 << 1) + 1);
+		System.out.printf("0x%x\n", 1<<2|1);
+		System.out.printf("0x%x\n", Board.OUT);
+		System.out.printf("0x%x\n", Board.OUT_X);
+		System.out.printf("0x%x\n", Board.OUT_Y);
+		short x = (short)0xFF3D;
+		System.out.printf("0x%x\n", x);
+		System.out.printf("0x%x\n", (byte)x);
+		System.out.printf("0x%x\n", (byte)(x>>8));
 		System.out.print(GameBoard);
-
+		System.out.println("Available Moves:");
+		java.util.HashSet<Turn> ts = GameBoard.getValidTurns();
+		for (Turn t : ts) {
+			System.out.println(t);
+		}
 
 	}
 
