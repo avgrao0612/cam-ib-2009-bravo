@@ -13,6 +13,7 @@ public class Draughts {
 		GameBoard = new Board(black, red);
 		Piece a = GameBoard.board[0x57];
 		a.flags = -1;
+		GameBoard.setValidTurns();
 		/*System.out.println(a.isDead()? "yes": "no");
 		System.out.println(a.isKing()? "yes": "no");
 		byte b = (byte) 0xFF;
@@ -29,8 +30,9 @@ public class Draughts {
 		for (Turn t : ts) {
 			System.out.println(t);
 		}
-		System.out.println(ts.contains(new Turn(GameBoard.board[0x13], true, new byte[]{0x13, 0x31, 0x53, 0x35, 0x13})));
-		System.out.println(ts.contains(new Turn(GameBoard.board[0x13], true, new byte[]{0x13, 0x31, 0x53, 0x35, 0x14})));
+		System.out.println(ts.contains(new Turn((byte)0x13, (byte)0x13, new byte[]{0x24, 0x44, 0x42, 0x22})));
+		System.out.println(ts.contains(new Turn((byte)0x13, (byte)0x13, new byte[]{0x22, 0x44, 0x42, 0x24})));
+		System.out.println(ts.contains(new Turn((byte)0x13, (byte)0x15, new byte[]{0x24, 0x44, 0x42, 0x22})));
 
 	}
 

@@ -106,7 +106,6 @@ public class Board {
 		out.append((who)?"red to move\n":"black to move\n");
 
 		return out.toString();
-
 	}
 
 	// whether a given position is inside the playing area
@@ -166,53 +165,57 @@ public class Board {
 	}
 
 
-	// calculate all possible jumps from the src position, keeping track of
-	// all pieces that have already been taken
-	private byte[][] getAvailableJumps(byte src, byte cap, byte[] path, byte[] cptr) {
+	/* calculate all possible jumps from the src position
+	 *
+	 * src: source position
+	 * cap: last captured piece
+	 * pos: current position
+	 * cptr: all captured pieces so far
+	 */
+	private Turn[] getAvailableJumps(byte src, byte cap, byte pos, byte[] cptr) {
 
-		if (src == NONE) { return new byte[][]{}; }
-		path = Arrays.copyOf(path, path.length+1);
-		path[path.length-1] = src;
+		if (pos == NONE) { return new Turn[]{}; }
 
+		// add last captured piece into already-captured array
+		// we do it here to avoid having to do it 4 times below
 		if (cap != NONE) {
 			cptr = Arrays.copyOf(cptr, cptr.length+1);
 			cptr[cptr.length-1] = cap;
 		}
 
 		// stop if non-king lands on the king row
-		if (!levelUp(src) || board[path[0]].isKing()) {
+		if (!levelUp(pos) || board[src].isKing()) {
 
-			short frs = halfTestValidJump(src, true, true, path[0], cptr);
-			short brs = halfTestValidJump(src, true, false, path[0], cptr);
-			short fls = halfTestValidJump(src, false, true, path[0], cptr);
-			short bls = halfTestValidJump(src, false, false, path[0], cptr);
-			byte[][] fra = getAvailableJumps((byte)frs, (byte)(frs>>8), path, cptr);
-			byte[][] bra = getAvailableJumps((byte)brs, (byte)(brs>>8), path, cptr);
-			byte[][] fla = getAvailableJumps((byte)fls, (byte)(fls>>8), path, cptr);
-			byte[][] bla = getAvailableJumps((byte)bls, (byte)(bls>>8), path, cptr);
+			short frs = halfTestValidJump(pos, true, true, src, cptr);
+			short brs = halfTestValidJump(pos, true, false, src, cptr);
+			short fls = halfTestValidJump(pos, false, true, src, cptr);
+			short bls = halfTestValidJump(pos, false, false, src, cptr);
+			Turn[] fra = getAvailableJumps(src, (byte)(frs>>8), (byte)frs, cptr);
+			Turn[] bra = getAvailableJumps(src, (byte)(brs>>8), (byte)brs, cptr);
+			Turn[] fla = getAvailableJumps(src, (byte)(fls>>8), (byte)fls, cptr);
+			Turn[] bla = getAvailableJumps(src, (byte)(bls>>8), (byte)bls, cptr);
 
 			int len = fra.length + bra.length + fla.length + bla.length;
 			if (len > 0) {
-				byte[][] jumps = new byte[len][];
+				Turn[] cps = new Turn[len];
 				int i = 0;
-				for (byte[] p : fra) { jumps[i] = p; ++i; }
-				for (byte[] p : bra) { jumps[i] = p; ++i; }
-				for (byte[] p : fla) { jumps[i] = p; ++i; }
-				for (byte[] p : bla) { jumps[i] = p; ++i; }
-				return jumps;
+				for (Turn p : fra) { cps[i] = p; ++i; }
+				for (Turn p : bra) { cps[i] = p; ++i; }
+				for (Turn p : fla) { cps[i] = p; ++i; }
+				for (Turn p : bla) { cps[i] = p; ++i; }
+				return cps;
 			}
 		}
 
-		return (path.length > 1)? new byte[][]{path}: new byte[][]{};
+		return new Turn[]{new Turn(src, pos, cptr)};
 	}
-	private byte[][] getAvailableJumps(byte src) {
-		return getAvailableJumps(src, NONE, new byte[]{}, new byte[]{});
+	private Turn[] getAvailableJumps(byte src) {
+		return getAvailableJumps(src, NONE, src, new byte[]{});
 	}
 
 
 	// calculate all valid turns from the current position
 	public void setValidTurns() {
-
 		vt = new HashSet<Turn>();
 
 		for (Piece p : board) {
@@ -221,19 +224,18 @@ public class Board {
 			// check moves forwards
 			byte frm = halfTestValidMove(p.pos, true, true);
 			byte flm = halfTestValidMove(p.pos, false, true);
-			if (frm != NONE) { vt.add(new Turn(p, false, new byte[]{p.pos, frm})); }
-			if (flm != NONE) { vt.add(new Turn(p, false, new byte[]{p.pos, flm})); }
+			if (frm != NONE) { vt.add(new Turn(p.pos, frm)); }
+			if (flm != NONE) { vt.add(new Turn(p.pos, flm)); }
 
 			if (p.isKing()) {
 				// check moves backwards
 				byte brm = halfTestValidMove(p.pos, true, false);
 				byte blm = halfTestValidMove(p.pos, false, false);
-				if (brm != NONE) { vt.add(new Turn(p, false, new byte[]{p.pos, brm})); }
-				if (blm != NONE) { vt.add(new Turn(p, false, new byte[]{p.pos, blm})); }
+				if (brm != NONE) { vt.add(new Turn(p.pos, brm)); }
+				if (blm != NONE) { vt.add(new Turn(p.pos, blm)); }
 
 				// check jumps in all directions
-				byte[][] js = getAvailableJumps(p.pos);
-				for (byte[] j : js) { vt.add(new Turn(p, true, j)); }
+				for (Turn j : getAvailableJumps(p.pos)) { vt.add(j); }
 
 			} else {
 				// check jumps forwards
@@ -241,12 +243,12 @@ public class Board {
 				short fls = halfTestValidJump(p.pos, false, true, NONE, new byte[]{});
 				// check subsequent jumps in all directions
 				if ((byte)frs != NONE) {
-					byte[][] js = getAvailableJumps((byte)frs, (byte)(frs>>8), new byte[]{p.pos}, new byte[]{});
-					for (byte[] j : js) { vt.add(new Turn(p, true, j)); }
+					Turn[] js = getAvailableJumps(p.pos, (byte)(frs>>8), (byte)frs, new byte[]{});
+					for (Turn j : js) { vt.add(j); }
 				}
 				if ((byte)fls != NONE) {
-					byte[][] js = getAvailableJumps((byte)fls, (byte)(fls>>8), new byte[]{p.pos}, new byte[]{});
-					for (byte[] j : js) { vt.add(new Turn(p, true, j)); }
+					Turn[] js = getAvailableJumps(p.pos, (byte)(fls>>8), (byte)fls, new byte[]{});
+					for (Turn j : js) { vt.add(j); }
 				}
 
 			}
@@ -266,48 +268,48 @@ public class Board {
 	 * Validate state-skeleton
 	 *************************************************************************/
 
-	// returns the expected state-skeleton after t is executed
-	private boolean[] expectedStateSkel(Turn t) {
-		assert(vt.contains(t));
-		boolean[] expected = new boolean[256];
+	// returns the changes between the current state and s
+	private byte[] changedStateSkel(boolean[] skel) {
+		byte[] changes = new byte[64]; // max of 64 changes to the playing area
+		Arrays.fill(changes, NONE);
 
-		// init skel for current board
-		for (Piece p : board) {
-			if (p == null || p.side != who || !p.inPlay()) { continue; }
-			expected[p.pos] = true;
-		}
+		int j=0;
+		for (byte i=0; i<256; ++i) {
+			// TODO: make game keep track of dead areas...
+			if (!inPlay(i)) { continue; } // ignore changes outside the playing area
 
-		// play the turn on the skeleton
-		expected[t.path[0]] = false;
-		if (t.type) { // captured pieces
-			expected[t.sub.pos] = false;
-			for (int i=1; i<t.path.length; ++i) {
-				int cap = t.path[i]+t.path[i-1] >> 1;
-				expected[cap] = false;
+			if (skel[i] && board[i] == null || !skel[i] && board[i] != null) {
+				changes[j++] = i;
 			}
-
 		}
-		expected[t.path[t.path.length-1]] = true;
-
-		return expected;
+		return changes;
 	}
 
-	// validates a state skeleton against a turn t, and provide a list of
-	// corrections that need to be made
-	private boolean validateStateSkel(Turn t, boolean[] state, byte[] corrections) {
-		// TODO: maybe have this throw exception
+	// validates a list of changes against a turn t, and provide a list of
+	// removals that need to be made
+	private boolean validateStateSkel(Turn t, byte[] changes, byte[] removals) {
+		// TODO: maybe have this throw an exception
 		assert(vt.contains(t));
+		Arrays.fill(removals, NONE);
 
-		boolean[] expected = expectedStateSkel(t);
+		// validate the turn first
+		for (int j=0; j<64; ++j) {
+
+		}
+
+		// see if there are extraneous things
+
 		return false;
 	}
 
-	// validate a skeleton state against all valid turns
+	// TODO validate a skeleton state against all valid turns
 	public Turn getTurnFromSkel(boolean[] state) {
 		// TODO: resolve conflicts (mutiple turns being valid for the same state)
-		byte[] corrections = new byte[256];
+		byte[] changes = changedStateSkel(state);
+		byte[] removals = new byte[64];
+
 		for (Turn t : vt) {
-			if (validateStateSkel(t, state, corrections)) {
+			if (validateStateSkel(t, changes, removals)) {
 				return t;
 			}
 		}
