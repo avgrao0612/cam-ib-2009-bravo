@@ -22,8 +22,8 @@ public class Piece {
 	public boolean isDead() { return (flags & DEAD) != 0; }
 	public boolean isKing() { return (flags & KING) != 0; }
 
-	public void toKing() { flags |= DEAD; }
-	public void toDead() { flags |= DEAD; }
+	public Piece toKing() { flags |= KING; return this; }
+	public Piece toDead() { flags |= DEAD; return this; }
 
 	public boolean inPlay() { return Board.inPlay(pos); }
 

@@ -9,20 +9,21 @@ public class HumanPlayer extends Player {
 	Random r = new Random();
 
 	private boolean inputReady() {
-		//return true; //(r.nextInt(4) == 0);
-		return false;
+		return true;// (r.nextInt(2) == 0);
+		//return false;
 	}
 
 	public Turn doTurn() {
-
-		while(!inputReady()) {
-			System.out.println((side?"white":"black")+" is not ready...");
+		int i=0;
+		do {
+			System.out.print((side?"white":"black")+" is not ready..." + i + "\r");
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(500);
+				++i;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
+		} while(!inputReady());
 
 		return board.getTurnFromSkel(getStateSkel());
 
@@ -43,7 +44,14 @@ public class HumanPlayer extends Player {
 
 		// pick a random turn
 		Turn k = null;
-		for (Turn t : board.getValidTurns()) { k = t; break; }
+		int s = r.nextInt(board.getValidTurns().size());
+		int i = 0;
+		for (Turn t : board.getValidTurns()) {
+			if (i++ == s) {
+				k = t; break;
+			}
+		}
+		System.out.println(k);
 
 		skel[k.src] = !skel[k.src];
 		skel[k.dst] = !skel[k.dst];
