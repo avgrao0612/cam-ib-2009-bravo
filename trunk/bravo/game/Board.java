@@ -18,20 +18,18 @@ public class Board {
 
 	// initialise a starting board
 	public Board() {
-
-		// squares across the centre from each other add to 119
-		/*byte[] red = {119, 117, 115, 113, 102, 100, 98, 96, 87, 85, 83, 81};
+		// squares across the centre from each other add to 0x77
+		byte[] red = {0x77, 0x75, 0x73, 0x71, 0x66, 0x64, 0x62, 0x60, 0x57, 0x55, 0x53, 0x51};
 
 		for (int i=0; i<red.length; ++i) {
-			board[119-red[i]] = new Piece((byte)i, false, (byte)(119-red[i]));
+			board[0x77-red[i]] = new Piece((byte)i, false, (byte)(0x77-red[i]));
 			board[red[i]] = new Piece((byte)i, true, red[i]);
-		}*/
-
-		byte[] red = {119, 115, 113, 102, 51, 85, 49, 81, 100};
-		byte[] black = {0, 2, 4, 6, 17, 19, 21, 23, 32, 34, 36, 38, 87};
+		}
+	}
+	// initialise a board with some pieces
+	public Board(byte[] black, byte[] red) {
 		for (int i=0; i<red.length; ++i) { board[red[i]] = new Piece((byte)i, true, red[i]); }
 		for (int i=0; i<black.length; ++i) { board[black[i]] = new Piece((byte)i, false, black[i]); }
-
 	}
 
 	// whether a given position is inside the playing area
@@ -119,6 +117,7 @@ public class Board {
 				return jumps;
 			}
 		}
+
 		return (path.length > 1)? new byte[][]{path}: new byte[][]{};
 
 	}
@@ -133,7 +132,6 @@ public class Board {
 		HashSet<Turn> hs = new HashSet<Turn>();
 
 		for (Piece p : board) {
-
 			if (p == null || p.side != who) { continue; }
 
 			// check moves forwards
@@ -149,7 +147,7 @@ public class Board {
 				if (brm != NONE) { hs.add(new Turn(p, false, new byte[]{p.pos, brm})); }
 				if (blm != NONE) { hs.add(new Turn(p, false, new byte[]{p.pos, blm})); }
 
-				// check all jumps
+				// check jumps in all directions
 				byte[][] js = getAvailableJumps(p.pos);
 				for (byte[] j : js) { hs.add(new Turn(p, true, j)); }
 
@@ -157,6 +155,7 @@ public class Board {
 				// check jumps forwards
 				short frs = halfTestValidJump(p.pos, true, true, NONE, new byte[]{});
 				short fls = halfTestValidJump(p.pos, false, true, NONE, new byte[]{});
+				// check subsequent jumps in all directions
 				if ((byte)frs != NONE) {
 					byte[][] js = getAvailableJumps((byte)frs, (byte)(frs>>8), new byte[]{p.pos}, new byte[]{});
 					for (byte[] j : js) { hs.add(new Turn(p, true, j)); }
@@ -179,25 +178,25 @@ public class Board {
 	public String toString() {
 		/*
 			+---+---+---+---+---+---+---+---+---+---+
-			|152|144|145|146|147|148|149|150|151|153| 9
-			+---+---+---+---+---+---+---+---+---+---+
+			|152 144 145 146 147 148 149 150 151 153| 9
+			+   +---+---+---+---+---+---+---+---+   +
 			|120|112|113|114|115|116|117|118|119|121| 7
-			+---+---+---+---+---+---+---+---+---+---+
+			+   +---+---+---+---+---+---+---+---+   +
 			|104|96 |97 |98 |99 |100|101|102|103|105| 6
-			+---+---+---+---+---+---+---+---+---+---+
+			+   +---+---+---+---+---+---+---+---+   +
 			|88 |80 |81 |82 |83 |84 |85 |86 |87 |89 | 5
-			+---+---+---+---+---+---+---+---+---+---+
+			+   +---+---+---+---+---+---+---+---+   +
 			|72 |64 |65 |66 |67 |68 |69 |70 |71 |73 | 4
-			+---+---+---+---+---+---+---+---+---+---+
+			+   +---+---+---+---+---+---+---+---+   +
 			|56 |48 |49 |50 |51 |52 |53 |54 |55 |57 | 3
-			+---+---+---+---+---+---+---+---+---+---+
+			+   +---+---+---+---+---+---+---+---+   +
 			|40 |32 |33 |34 |35 |36 |37 |38 |39 |41 | 2
-			+---+---+---+---+---+---+---+---+---+---+
+			+   +---+---+---+---+---+---+---+---+   +
 			|24 |16 |17 |18 |19 |20 |21 |22 |23 |25 | 1
-			+---+---+---+---+---+---+---+---+---+---+
+			+   +---+---+---+---+---+---+---+---+   +
 			| 8 | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 9 | 0
-			+---+---+---+---+---+---+---+---+---+---+
-			|136|128|129|130|131|132|133|134|135|137| 8
+			+   +---+---+---+---+---+---+---+---+   +
+			|136 128 129 130 131 132 133 134 135 137| 8
 			+---+---+---+---+---+---+---+---+---+---+
 			  8   0   1   2   3   4   5   6   7   9 x\y
 
@@ -206,10 +205,11 @@ public class Board {
 		*/
 
 		int[] c = {8, 0, 1, 2, 3, 4, 5, 6, 7, 9};
-		String rowsep = "+---+---+---+---+---+---+---+---+---+---+\n";
+		String boardsep = "+---+---+---+---+---+---+---+---+---+---+\n";
+		String rowsep = "+   +---+---+---+---+---+---+---+---+   +\n";
 
 		StringBuffer out = new StringBuffer();
-		out.append(rowsep);
+		out.append(boardsep);
 
 		int x, y;
 		char ch;
@@ -223,19 +223,19 @@ public class Board {
 				if (board[y<<4|x] == null) {
 					ch = ' ';
 				} else {
-					ch = (board[y<<4|x].side)? 'R': 'B';
-					if (!board[y<<4|x].isKing()) {
-						ch += 32;
-					}
+					ch = (board[y<<4|x].side)? 'r': 'b';
+					// CAPS for king
+					if (board[y<<4|x].isKing()) { ch -= 32; }
 				}
 				//ch = (inPlay((byte)(y<<4|x)))? 'Y': 'N';
 				//ch = (levelUp((byte)(y<<4|x)))? 'Y': 'N';
-				out.append(" ").append(ch).append(" |");
+				out.append(" ").append(ch).append(y<8||x==9?" |":"  ");
 
 			}
-			out.append("\n").append(rowsep);
+			out.append(" ").append(y).append("\n").append(y==8?boardsep:rowsep);
 
 		}
+		out.append("  8   0   1   2   3   4   5   6   7   9 x\\y\n");
 		out.append((who)?"red to move\n":"black to move\n");
 
 		return out.toString();

@@ -23,11 +23,11 @@ public class Turn {
 
 	// description of the turn
 	public String toString() {
-		StringBuffer out = new StringBuffer((subject.side?"RED: ":"BLACK: ") + subject.pos + (type?" JUMP":" MOVE") + " to ");
+		StringBuffer out = new StringBuffer((subject.side?"RED: ":"BLACK: ") + "0x" + Integer.toHexString(subject.pos) + (type?" JUMP":" MOVE") + " to ");
 		for (int i=1; i<path.length-1; ++i) {
-			out.append(path[i]).append(", ");
+			out.append("0x").append(Integer.toHexString(path[i])).append(", ");
 		}
-		out.append(path[path.length-1]);
+		out.append("0x").append(Integer.toHexString(path[path.length-1]));
 		return out.toString();
 	}
 

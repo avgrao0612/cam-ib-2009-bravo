@@ -9,8 +9,10 @@ public class Draughts {
 
 	public static void main(String[] args) {
 
-		GameBoard = new Board();
-		Piece a = GameBoard.board[87];
+		byte[] red = {0x77, 0x71, 0x66, 0x64, 0x44, 0x42, 0x24, 0x22, 0x62};
+		byte[] black = {0x00, 0x02, 0x04, 0x06, 0x11, 0x13, 0x15, 0x17, 0x20, 0x26, 0x57, 0x55};
+		GameBoard = new Board(black, red);
+		Piece a = GameBoard.board[0x57];
 		a.flags = -1;
 		System.out.println(a.isDead()? "yes": "no");
 		System.out.println(a.isKing()? "yes": "no");
