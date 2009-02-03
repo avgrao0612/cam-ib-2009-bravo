@@ -6,18 +6,26 @@ import java.util.Arrays;
 public class Turn {
 
 
-	final Piece sub;
-	final boolean type; // 0:move, 1:jump
-	final byte[] path;
+	final byte src, dst;
+	final byte[] capt;
 
-	public Turn(Piece s, boolean t, byte[] p) {
-		assert(s.pos == p[0]);
-		// TODO: check type == 0 => path length == 2 else length > 1
-		// throw exception and prevent object creation otherwise
+	public Turn(byte s, byte d, byte[] c) {
+		src = s;
+		dst = d;
+		capt = c;
+	}
 
-		sub = s;
-		type = t;
-		path = p;
+	public Turn(byte s, byte d) {
+		src = s;
+		dst = d;
+		capt = new byte[]{};
+	}
+
+	// returns the list of middle steps, if this is a jump
+	public byte[] steps() {
+		byte[] c = new byte[capt.length-1];
+		// TODO: code
+		return c;
 	}
 
 	// turn this into Move objects
@@ -27,25 +35,35 @@ public class Turn {
 
 	// description of the turn
 	public String toString() {
-		StringBuffer out = new StringBuffer((sub.side?"RED: ":"BLACK: ") + "0x" + Integer.toHexString(sub.pos) + (type?" JUMP":" MOVE") + " to ");
-		for (int i=1; i<path.length-1; ++i) {
-			out.append("0x").append(Integer.toHexString(path[i])).append(", ");
+		StringBuffer out = new StringBuffer("0x" + Integer.toHexString(src) + (capt.length>0?" jump ":" move ") + "0x" + Integer.toHexString(dst));
+		if (capt.length > 0) {
+			out.append(" [");
+			for (int i=0; i<capt.length-1; ++i) {
+				out.append("0x").append(Integer.toHexString(capt[i])).append(", ");
+			}
+			out.append("0x").append(Integer.toHexString(capt[capt.length-1]));
+			out.append("] ");
 		}
-		out.append("0x").append(Integer.toHexString(path[path.length-1]));
 		return out.toString();
 	}
 
 	// override equals and hashCode for better equality testing
 
 	public boolean equals(Object o) {
-		if (this == o) { return true; }
-		if (!(o instanceof Turn)) { return false; }
-		Turn t = (Turn) o;
-		return type == t.type && Arrays.equals(path, t.path);
+		if (o instanceof Turn) {
+			Turn t = (Turn) o;
+			return src == t.src && dst == t.dst && Arrays.equals(capt, t.capt);
+		}
+		return false;
 	}
 
 	public int hashCode() {
-		return type? Arrays.hashCode(path): ~Arrays.hashCode(path);
+		int hash = 1;
+		hash = hash * 31 + src;
+		hash = hash * 31 + dst;
+		hash = hash * 31 + Arrays.hashCode(capt);
+		return hash;
 	}
+
 
 }
