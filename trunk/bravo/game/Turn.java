@@ -21,10 +21,11 @@ public class Turn {
 		capt = new byte[]{};
 	}
 
-	// returns the list of middle steps, if this is a jump
-	public byte[] steps() {
+	// returns the intermediate steps, if this is a multi-jump
+	public byte[] getPath() {
+		if (capt.length == 0) { return new byte[]{}; }
 		byte[] c = new byte[capt.length-1];
-		// TODO: code
+		// TODO: code this
 		return c;
 	}
 
@@ -38,10 +39,10 @@ public class Turn {
 		StringBuffer out = new StringBuffer("0x" + Integer.toHexString(src) + (capt.length>0?" jump ":" move ") + "0x" + Integer.toHexString(dst));
 		if (capt.length > 0) {
 			out.append(" [");
-			for (int i=0; i<capt.length-1; ++i) {
-				out.append("0x").append(Integer.toHexString(capt[i])).append(", ");
+			out.append("0x").append(Integer.toHexString(capt[0]));
+			for (int i=1; i<capt.length; ++i) {
+				out.append(", ").append("0x").append(Integer.toHexString(capt[i]));
 			}
-			out.append("0x").append(Integer.toHexString(capt[capt.length-1]));
 			out.append("] ");
 		}
 		return out.toString();

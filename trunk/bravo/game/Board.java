@@ -14,30 +14,28 @@ public class Board {
 
 	final static byte NONE = -0x01; // 0xFF
 
-	Piece board[] = new Piece[256];
-	boolean who; // next mover
+	/*private*/ Piece board[] = new Piece[256];
+	private boolean who; // next mover
+	private Player black;
+	private Player white;
 
 	private HashSet<Turn> vt;
 
 	// initialise a starting board
 	public Board() {
 		// squares across the centre from each other add to 0x77
-		byte[] red = {0x77, 0x75, 0x73, 0x71, 0x66, 0x64, 0x62, 0x60, 0x57, 0x55, 0x53, 0x51};
+		byte[] white = {0x77, 0x75, 0x73, 0x71, 0x66, 0x64, 0x62, 0x60, 0x57, 0x55, 0x53, 0x51};
 
-		for (int i=0; i<red.length; ++i) {
-			board[0x77-red[i]] = new Piece((byte)i, false, (byte)(0x77-red[i]));
-			board[red[i]] = new Piece((byte)i, true, red[i]);
+		for (int i=0; i<white.length; ++i) {
+			board[0x77-white[i]] = new Piece((byte)i, false, (byte)(0x77-white[i]));
+			board[white[i]] = new Piece((byte)i, true, white[i]);
 		}
-
-		setValidTurns();
 	}
 
 	// initialise a board with some pieces
-	public Board(byte[] black, byte[] red) {
-		for (int i=0; i<red.length; ++i) { board[red[i]] = new Piece((byte)i, true, red[i]); }
+	public Board(byte[] black, byte[] white) {
+		for (int i=0; i<white.length; ++i) { board[white[i]] = new Piece((byte)i, true, white[i]); }
 		for (int i=0; i<black.length; ++i) { board[black[i]] = new Piece((byte)i, false, black[i]); }
-
-		setValidTurns();
 	}
 
 
@@ -90,7 +88,7 @@ public class Board {
 				if (board[y<<4|x] == null) {
 					ch = ' ';
 				} else {
-					ch = (board[y<<4|x].side)? 'r': 'b';
+					ch = (board[y<<4|x].side)? 'w': 'b';
 					// CAPS for king
 					if (board[y<<4|x].isKing()) { ch -= 32; }
 				}
@@ -103,7 +101,7 @@ public class Board {
 
 		}
 		out.append("  8   0   1   2   3   4   5   6   7   9 x\\y\n");
-		out.append((who)?"red to move\n":"black to move\n");
+		out.append((who)?"white to move\n":"black to move\n");
 
 		return out.toString();
 	}
@@ -122,6 +120,19 @@ public class Board {
 	/*************************************************************************
 	 * Calculate valid moves
 	 *************************************************************************/
+
+	/*
+	 * only kings can move backwards
+	 *
+	 * move - diagonal 1
+	 * jump - diagonal 2
+	 *   multijump - diagonal 2, any direction by any piece
+	 *
+	 * king - if non-king lands on back row, turn ends
+	 *
+	 * game ends when other player has no valid moves left (this includes no pieces)
+	 * ie. only need to check Board.getValidMoves().size() == 0
+	 */
 
 	/* calculates the new position of a move from start
 	**
@@ -166,12 +177,12 @@ public class Board {
 
 
 	/* calculate all possible jumps from the src position
-	 *
-	 * src: source position
-	 * cap: last captured piece
-	 * pos: current position
-	 * cptr: all captured pieces so far
-	 */
+	**
+	** src: source position
+	** cap: last captured piece
+	** pos: current position
+	** cptr: all captured pieces so far
+	*/
 	private Turn[] getAvailableJumps(byte src, byte cap, byte pos, byte[] cptr) {
 
 		if (pos == NONE) { return new Turn[]{}; }
@@ -215,7 +226,7 @@ public class Board {
 
 
 	// calculate all valid turns from the current position
-	public void setValidTurns() {
+	public Board setValidTurns() {
 		vt = new HashSet<Turn>();
 
 		for (Piece p : board) {
@@ -243,18 +254,21 @@ public class Board {
 				short fls = halfTestValidJump(p.pos, false, true, NONE, new byte[]{});
 				// check subsequent jumps in all directions
 				if ((byte)frs != NONE) {
-					Turn[] js = getAvailableJumps(p.pos, (byte)(frs>>8), (byte)frs, new byte[]{});
-					for (Turn j : js) { vt.add(j); }
+					for (Turn j : getAvailableJumps(p.pos, (byte)(frs>>8), (byte)frs, new byte[]{})) { vt.add(j); }
 				}
 				if ((byte)fls != NONE) {
-					Turn[] js = getAvailableJumps(p.pos, (byte)(fls>>8), (byte)fls, new byte[]{});
-					for (Turn j : js) { vt.add(j); }
+					for (Turn j : getAvailableJumps(p.pos, (byte)(fls>>8), (byte)fls, new byte[]{})) { vt.add(j); }
 				}
 
 			}
 
 		}
 
+		return this;
+	}
+
+	public boolean hasValidTurns() {
+		return vt.size() > 0;
 	}
 
 	// return all valid turns
@@ -271,10 +285,9 @@ public class Board {
 	// returns the changes between the current state and s
 	private byte[] changedStateSkel(boolean[] skel) {
 		byte[] changes = new byte[64]; // max of 64 changes to the playing area
-		Arrays.fill(changes, NONE);
 
 		int j=0;
-		for (byte i=0; i<256; ++i) {
+		for (byte i=0; i!=-1; ++i) { // can't do <256 since -128 <= byte <= 127
 			// TODO: make game keep track of dead areas...
 			if (!inPlay(i)) { continue; } // ignore changes outside the playing area
 
@@ -282,27 +295,56 @@ public class Board {
 				changes[j++] = i;
 			}
 		}
+
+		// return a sorted subset that can be searched through with binarySearch
+		changes = Arrays.copyOfRange(changes, 0, j);
+		Arrays.sort(changes);
 		return changes;
 	}
 
-	// validates a list of changes against a turn t, and provide a list of
-	// removals that need to be made
+	// validates a list of changes against a Turn t, and provide a list of
+	// removals that need to be made to fully normalise the board
+	// t is ASSUMED to be a valid turn
 	private boolean validateStateSkel(Turn t, byte[] changes, byte[] removals) {
-		// TODO: maybe have this throw an exception
-		assert(vt.contains(t));
+
+		for (byte b : changes) { System.out.print("0x" + Integer.toHexString(b) + " "); }
+		System.out.print("| " + t + "\n");
+
 		Arrays.fill(removals, NONE);
+		boolean[] done = new boolean[changes.length];
+		int ri = 0; // removals index, indexes index
 
 		// validate the turn first
-		for (int j=0; j<64; ++j) {
+		int i;
+		// check src and dst
+		i = Arrays.binarySearch(changes, t.src);
+		if (i < 0) { return false; } else { done[i] = true; }
+		i = Arrays.binarySearch(changes, t.dst);
+		if (i < 0) { return false; } else { done[i] = true; }
 
+		// put captured squares that still have pieces on them, into removals
+		for (byte b : t.capt) {
+			i = Arrays.binarySearch(changes, b);
+			if (i < 0) { removals[ri++] = b; }
 		}
 
-		// see if there are extraneous things
+		// see if there are extraneous changes
+		for (int j=0; j<changes.length; ++j) {
+			if (done[j]) { continue; }
+			if (board[changes[j]] != null) {
+				// something has been removed from the board, abort
+				return false;
+			} else {
+				// something has been added to the board, remove it
+				removals[ri++] = changes[j];
+			}
+		}
 
-		return false;
+		// everything matches
+		return true;
 	}
 
-	// TODO validate a skeleton state against all valid turns
+	// validate a skeleton state against all possible turns
 	public Turn getTurnFromSkel(boolean[] state) {
 		// TODO: resolve conflicts (mutiple turns being valid for the same state)
 		byte[] changes = changedStateSkel(state);
@@ -321,11 +363,30 @@ public class Board {
 	 * Execute turn
 	 *************************************************************************/
 
+	public Board startGame(Player b, Player w) {
+		black = b.sit(this, false);
+		white = w.sit(this, true);
+		return setValidTurns();
+	}
+
+	public Board nextTurn() {
+		return updateBoard(who? white.doTurn(): black.doTurn());
+	}
+
+	public Board handleWinner() {
+		return this;
+	}
+
+
 	// TODO executes Turn t, updating the board with the new positions
-	private boolean executeTurn(Turn t) {
+	public Board updateBoard(Turn t) {
+		System.out.print(this);
+		System.out.print(t);
+		assert(vt.contains(t));
 
 		setValidTurns();
-		return false;
+		who = !who;
+		return this;
 	}
 
 	// TODO kill a piece and put it in some cell in the dead area

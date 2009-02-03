@@ -1,7 +1,17 @@
 package bravo.game;
 
-public interface Player {
+public abstract class Player {
 
-	public boolean doTurn();
+	protected Board board;
+	protected boolean side;
+
+	public Player sit(Board b, boolean s) {
+		board = b;
+		side = s;
+		return this;
+	}
+
+	public abstract Turn doTurn();
+
 
 }
