@@ -2,16 +2,17 @@ package bravo.game;
 
 public abstract class Player {
 
-	protected Board board;
+	protected Draughts game;
 	protected boolean side;
+	// TODO: code resigning
 
-	public Player sit(Board b, boolean s) {
-		board = b;
+	public Player sit(Draughts g, boolean s) {
+		game = g;
 		side = s;
 		return this;
 	}
 
-	public abstract Turn doTurn();
+	public abstract Player doTurn();
 
 
 }

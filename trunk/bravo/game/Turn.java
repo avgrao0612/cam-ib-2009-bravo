@@ -36,12 +36,12 @@ public class Turn {
 
 	// description of the turn
 	public String toString() {
-		StringBuffer out = new StringBuffer("0x" + Integer.toHexString(src) + (capt.length>0?" jump ":" move ") + "0x" + Integer.toHexString(dst));
+		StringBuffer out = new StringBuffer("0x" + String.format("%02x", src) + (capt.length>0?" jump ":" move ") + "0x" + String.format("%02x", dst));
 		if (capt.length > 0) {
 			out.append(" [");
-			out.append("0x").append(Integer.toHexString(capt[0]));
+			out.append("0x").append(String.format("%02x", capt[0]));
 			for (int i=1; i<capt.length; ++i) {
-				out.append(", ").append("0x").append(Integer.toHexString(capt[i]));
+				out.append(", ").append("0x").append(String.format("%02x", capt[i]));
 			}
 			out.append("] ");
 		}

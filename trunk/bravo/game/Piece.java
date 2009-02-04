@@ -11,7 +11,7 @@ public class Piece {
 	final boolean side;
 
 	byte pos;
-	byte flags;
+	private byte flags;
 
 	public Piece(byte i, boolean s, byte p) {
 		id = i;
@@ -24,7 +24,5 @@ public class Piece {
 
 	public Piece toKing() { flags |= KING; return this; }
 	public Piece toDead() { flags |= DEAD; return this; }
-
-	public boolean inPlay() { return Board.inPlay(pos); }
 
 }
