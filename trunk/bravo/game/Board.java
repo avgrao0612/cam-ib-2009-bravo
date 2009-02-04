@@ -433,7 +433,7 @@ public class Board {
 		p.pos = dst;
 		cell[src&B] = null;
 		if (!p.isKing() && levelUp(dst)) {
-			p.toKing();
+			kingPiece(dst);
 		}
 		return p;
 	}
@@ -441,8 +441,21 @@ public class Board {
 	// kill a piece and put it in some cell in the dead area
 	private Piece killPiece(byte pos) {
 		// TODO make this move it to a dead cell, instead of just setting to null
+		// only kings go into king reserve, only king reserve is for kings
 		cell[pos&B] = null;
 		return null;
+	}
+
+	private Piece kingPiece(byte pos) {
+		// TODO find the first King out of play and place it there
+		for (Piece p : cell) {
+			if (p != null && !inPlay(p.pos) && p.side == who && p.isKing()) {
+				killPiece(pos);
+				movePiece(p.pos, pos);
+				return p;
+			}
+		}
+		throw new NoKingsLeftException();
 	}
 
 
