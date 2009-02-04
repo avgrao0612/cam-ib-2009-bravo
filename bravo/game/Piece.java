@@ -4,25 +4,19 @@ package bravo.game;
 
 public class Piece {
 
-	final static byte KING = 0x02;
-	final static byte DEAD = 0x01;
-
 	final byte id;
 	final boolean side;
+	final boolean king;
 
 	byte pos;
-	private byte flags;
 
-	public Piece(byte i, boolean s, byte p) {
+	public Piece(byte i, boolean s, boolean k, byte p) {
 		id = i;
 		side = s;
+		king = k;
 		pos = p;
 	}
 
-	public boolean isDead() { return (flags & DEAD) != 0; }
-	public boolean isKing() { return (flags & KING) != 0; }
-
-	public Piece toKing() { flags |= KING; return this; }
-	public Piece toDead() { flags |= DEAD; return this; }
+	public boolean isKing() { return king; }
 
 }
