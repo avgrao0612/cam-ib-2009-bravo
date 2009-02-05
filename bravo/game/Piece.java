@@ -17,6 +17,4 @@ public class Piece {
 		pos = p;
 	}
 
-	public boolean isKing() { return king; }
-
 }

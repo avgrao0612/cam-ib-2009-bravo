@@ -8,10 +8,10 @@ public class HumanPlayer extends Player {
 		return true;
 	}
 
-	public Player doTurn() {
+	public boolean doTurn() {
 		int i=0;
 		do {
-			System.out.print((side?"white":"black")+" is not ready..." + i + "\r");
+			System.out.print((side?"w":"b")+" not ready: " + i + "\r");
 			try {
 				Thread.sleep(250);
 				++i;
@@ -20,7 +20,7 @@ public class HumanPlayer extends Player {
 			}
 		} while(!inputReady());
 
-		return this;
+		return true;
 
 	}
 
