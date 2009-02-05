@@ -16,11 +16,4 @@ public class Move {
 		dst = d;
 	}
 
-	//public abstract Piece getPiece();
-
-	//public abstract int getFrom();
-
-	//public abstract int getTo();
-
 }
-

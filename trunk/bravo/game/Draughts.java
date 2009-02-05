@@ -10,50 +10,26 @@ public class Draughts {
 
 	private Player black;
 	private Player white;
-	private Piece[] ps; // remove
 
-	private Turn[] history; // code this
+	private Turn[] history; // TODO to be implemented
 
 	public Draughts(Player b, Player w) {
-		black = b;
-		white = w;
-		black.sit(this, false);
-		white.sit(this, true);
-
-		// TODO move to Board
-		// init pieces
-		byte[] white = {0x77, 0x75, 0x73, 0x71, 0x66, 0x64, 0x62, 0x60, 0x57, 0x55, 0x53, 0x51,
-			-0x7F, -0x7E, -0x7D, -0x7C, -0x7B, -0x7A};
-			// 0x81, 0x82, 0x83, 0x84, 0x85, 0x86};
-		byte[] black = {0x00, 0x02, 0x04, 0x06, 0x11, 0x13, 0x15, 0x17, 0x20, 0x22, 0x24, 0x26,
-			-0x6F, -0x6E, -0x6D, -0x6C, -0x6B, -0x6A};
-			// 0x91, 0x92, 0x93, 0x94, 0x95, 0x96};
-		ps = new Piece[36];
-		for (int i=0; i<18; ++i) {
-			ps[i<<1] = new Piece((byte)i, false, !board.inPlay(black[i]), black[i]);
-			ps[(i<<1)+1] = new Piece((byte)i, true, !board.inPlay(white[i]), white[i]);
-		}
-		board = new Board(ps);
-
+		black = b.sit(this, false);
+		white = w.sit(this, true);
+		board = new Board();
 	}
 
 	public Draughts play() {
 		while (board.hasValidTurns()) {
-			nextTurn();
-			//try {
-				board.applyBoardState();
-			//} catch (RuntimeException e) {
-				//e.printStackTrace();
-			//}
+			if (!nextTurn()) { break; }
+			board.applyBoardState();
 		}
 		handleWinner();
 		return this;
 	}
 
-
-	public Draughts nextTurn() {
-		if (board.who()) { white.doTurn(); } else { black.doTurn(); }
-		return this;
+	public boolean nextTurn() {
+		return board.who()? white.doTurn(): black.doTurn();
 	}
 
 	public Draughts handleWinner() {
@@ -63,28 +39,28 @@ public class Draughts {
 
 
 	public static void main(String[] args) {
-		testMain();
+		testSuite();
+
+		// TODO SPEC: let player decide who to go first, make the other one AIPlayer
 
 		Draughts game = new Draughts(new HumanPlayer(), new HumanPlayer());
 		game.play();
 
 	}
 
-	public static void testMain() {
+	public static void printByteArray(String t, byte[] bs) {
+		System.out.print(t + ": [ ");
+		for (byte b: bs) { System.out.printf("0x%02x ",b); }
+		System.out.println("]");
+	}
+
+	public static void testSuite() {
 
 		int[] test = null;
 		/*byte b = -1;
 		System.out.println(b & Board.B);
 		System.out.println(b);
 		/*
-		byte[] white = {0x77, 0x71, 0x66, 0x64, 0x44, 0x42, 0x24, 0x22, 0x62};
-		byte[] black = {0x00, 0x02, 0x04, 0x06, 0x11, 0x13, 0x15, 0x17, 0x20, 0x26, 0x57, 0x55};
-		GameBoard = new Board(black, white);
-		Piece a = GameBoard.board[0x57];
-		a.flags = -1;
-		GameBoard.setValidTurns();
-		System.out.println(a.isDead()? "yes": "no");
-		System.out.println(a.isKing()? "yes": "no");
 		byte b = (byte) 0xFF;
 		System.out.printf("0x%x\n", b);
 		b = -1;

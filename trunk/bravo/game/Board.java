@@ -4,9 +4,13 @@ import java.util.HashSet;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Iterator;
 
-// Internal representation of the cell at each turn.
+// Internal representation of the board at each turn.
+
+// !!!IMPORTANT!!! make sure all accesses to array[256]s using a byte-type index are &B'd!!!
+// otherwise, java will treat it as a signed byte, potentially turning it into a negative index
+// known arrays which this applies to: cell[], skel[], chg[]
 
 public class Board {
 
@@ -19,15 +23,31 @@ public class Board {
 	// i know this is a dirty hack. byte me. java sucks balls.
 	// i'm not fucking using shorts when bytes will suffice.
 
+	final static byte[][] RES = new byte[][]{
+		new byte[]{-0x70, -0x69, -0x68, -0x67, 0x48, 0x49, 0x58, 0x59, 0x68, 0x69, 0x78, 0x79}, // BN
+		new byte[]{-0x6F, -0x6E, -0x6D, -0x6C, -0x6B, -0x6A}, // BK
+		new byte[]{-0x80, -0x79, -0x78, -0x77, 0x08, 0x09, 0x18, 0x19, 0x28, 0x29, 0x38, 0x39}, // WN
+		new byte[]{-0x7F, -0x7E, -0x7D, -0x7C, -0x7B, -0x7A}, // WK
+	};
+
 	private Piece cell[] = new Piece[256];
 	private boolean who; // next mover
 	private HashSet<Turn> vt;
 
-	// initialise a cell
-	public Board(Piece[] pieces) {
-		for (Piece p : pieces) {
-			cell[p.pos&B] = p;
+	// initialise a board
+	public Board() {
+		// starting pieces
+		byte[] white = {0x77, 0x75, 0x73, 0x71, 0x66, 0x64, 0x62, 0x60, 0x57, 0x55, 0x53, 0x51,
+			-0x7F, -0x7E, -0x7D, -0x7C, -0x7B, -0x7A};
+			// 0x81, 0x82, 0x83, 0x84, 0x85, 0x86};
+		byte[] black = {0x00, 0x02, 0x04, 0x06, 0x11, 0x13, 0x15, 0x17, 0x20, 0x22, 0x24, 0x26,
+			-0x6F, -0x6E, -0x6D, -0x6C, -0x6B, -0x6A};
+			// 0x91, 0x92, 0x93, 0x94, 0x95, 0x96};
+		for (int i=0; i<18; ++i) {
+			cell[black[i]&B] = new Piece((byte)i, false, !inPlay(black[i]), black[i]);
+			cell[white[i]&B] = new Piece((byte)i, true, !inPlay(white[i]), white[i]);
 		}
+
 		vt = new HashSet<Turn>();
 		setValidTurns();
 	}
@@ -84,7 +104,7 @@ public class Board {
 				} else {
 					ch = (cell[y<<4|x].side)? 'w': 'b';
 					// CAPS for king
-					if (cell[y<<4|x].isKing()) { ch -= 32; }
+					if (cell[y<<4|x].king) { ch -= 32; }
 				}
 				//ch = (inPlay((byte)(y<<4|x)))? 'Y': ' ';
 				//ch = (isReserve((byte)(y<<4|x)))? 'Y': ' ';
@@ -127,18 +147,26 @@ public class Board {
 		return (pos & 0xC0) == 0x40 || (pos & 0x90) == 0x90;
 	}
 
+	public boolean who() { return who; }
+
 	// whether a given position is on the opponent's last row
 	public boolean levelUp(byte pos) {
 		return who? (pos & 0xF0) == 0: (pos & 0xF0) == 0x70;
 	}
 
-	public boolean who() { return who; }
+	// get all reserved cells satisfying a set of properties
+	public byte[] getReserves(boolean full, boolean ally, boolean king) {
+		byte[] free = new byte[12];
+		int h = (who==ally?1:0)*2 + (king?1:0);
+		int f = 0;
 
-	// TODO: rm debug
-	public static void printByteArray(String t, byte[] bs) {
-		System.out.print(t + ": [ ");
-		for (byte b: bs) { System.out.printf("0x%02x ",b); }
-		System.out.println("]");
+		if (full) { for (byte b : RES[h]) { if (cell[b&B] != null) { free[f++] = b; } } }
+		else { for (byte b : RES[h]) { if (cell[b&B] == null) { free[f++] = b; } } }
+
+		byte[] fr = new byte[f];
+		for (--f; f>=0; --f) { fr[f] = free[f]; }
+
+		return fr;
 	}
 
 	public static void shuffleByteArray(byte[] array) {
@@ -165,12 +193,12 @@ public class Board {
 	 *
 	 * move - diagonal 1
 	 * jump - diagonal 2
-	 *   multijump - diagonal 2, any direction by any piece
+	 *   multijump - diagonal 2, any direction (even normal pieces)
 	 *
 	 * king - if non-king lands on back row, turn ends
 	 *
 	 * game ends when other player has no valid moves left (this includes no pieces)
-	 * ie. only need to check Board.getValidMoves().size() == 0
+	 * ie. only need to check hasValidMoves()
 	 */
 
 	/* calculates the new position of a move from start
@@ -202,7 +230,6 @@ public class Board {
 	// test validity of jump. an appropriate piece is ASSUMED to be at src.
 	// returns cap|dst or NONE|NONE if jump is invalid
 	private short halfTestValidJump(byte src, boolean hor, boolean ver, byte ignore, byte[] ignores) {
-
 		byte cap = posOf(src, hor, ver, false);
 		// make sure the captured piece isn't on the ignore list
 		for (byte b : ignores) { if (cap == b) { return NONE<<8|NONE; } }
@@ -234,7 +261,7 @@ public class Board {
 		}
 
 		// stop if non-king lands on the king row
-		if (!levelUp(pos) || cell[src&B].isKing()) {
+		if (!levelUp(pos) || cell[src&B].king) {
 
 			short frs = halfTestValidJump(pos, true, true, src, cptr);
 			short brs = halfTestValidJump(pos, true, false, src, cptr);
@@ -281,7 +308,7 @@ public class Board {
 				if (frm != NONE) { vt.add(new Turn(p.pos, frm)); }
 				if (flm != NONE) { vt.add(new Turn(p.pos, flm)); }
 
-				if (p.isKing()) {
+				if (p.king) {
 					// check moves backwards
 					byte brm = halfTestValidMove(p.pos, true, false);
 					byte blm = halfTestValidMove(p.pos, false, false);
@@ -291,7 +318,7 @@ public class Board {
 			}
 
 			// check jumps
-			if (p.isKing()) {
+			if (p.king) {
 				// check jumps in all directions
 				for (Turn j : getAvailableJumps(p.pos)) {
 					if (!jps) { vt.clear(); jps = true; } // first jump encountered clears the set
@@ -365,7 +392,7 @@ public class Board {
 	}
 
 	private boolean[] getStateSkel() {
-		// TODO: get actual user input
+		// TODO SPEC: get actual user input
 		return getRandomTurn();
 	}
 
@@ -375,7 +402,7 @@ public class Board {
 	final static byte C_INS = 0x08;
 	final static byte C_LIVE = 0x04;
 	final static byte C_KING = 0x02;
-	final static byte C_SIDE = 0x01;
+	final static byte C_ALLY = 0x01;
 
 	private byte[] getStateSkelChanges(boolean[] skel) {
 		byte[] chg = new byte[256];
@@ -387,11 +414,11 @@ public class Board {
 				flags |= C_INS;
 				if (inPlay((byte)i)) { flags |= C_LIVE; } // else the following flags are meaningless
 				if (inKRCol((byte)i)) { flags |= C_KING; }
-				if (!sideOf((byte)i)) { flags |= C_SIDE; } // reserves are on opposite side
+				if (sideOf((byte)i) != who) { flags |= C_ALLY; } // reserves are on opposite side
 			} else if (!skel[i] && cell[i] != null) {
 				if (inPlay((byte)i)) { flags |= C_LIVE; }
-				if (cell[i].isKing()) { flags |= C_KING; }
-				if (cell[i].side) { flags |= C_SIDE; }
+				if (cell[i].king) { flags |= C_KING; }
+				if (cell[i].side == who) { flags |= C_ALLY; }
 			} else { chg[i] = NONE; continue; }
 			chg[i] = flags;
 		}
@@ -399,7 +426,8 @@ public class Board {
 		return chg;
 	}
 
-	/* validates a list of changes against a Turn t
+	/* validates a list of changes against a Turn t, and
+	** plans the moves needed to put board into a valid state
 	** t is ASSUMED to be a valid turn
 
 	** KEY:
@@ -415,8 +443,6 @@ public class Board {
 	*/
 
 	private PendingChanges validateAndPlan(Turn t, byte[] chg, byte[][] fres, int[] highest) {
-		/*for (byte b : changes) { System.out.print("0x" + String.format("%02x", b) + " "); }
-		System.out.print("| " + t + "\n");*/
 		ArrayList<Move> phys = new ArrayList<Move>();
 		ArrayList<Move> virt = new ArrayList<Move>();
 
@@ -432,13 +458,12 @@ public class Board {
 		** TURN.src in rem-live
 		** plan-VIRT src-dst
 		** X = rem-live intersect TURN.capt
-		** ins-dead has >= X has
-		** ins-deadN has >= numof K in X
-		** ins-deadK has >= numof N in X
+		** pair all K from X with ins-deadK, if can't ABORT
+		** pair all N from X with ins-deadN, if can't ABORT
+		** plan-PHYS to kill TURN.capt \ X
+		** plan-VIRT all TURN.capt
 
 		** if numof not-yet-captured >= highest-so-for, ABORT (keep looping turns)
-		** plan-PHYS to kill not-yet-captured
-		** plan-VIRT all captured pieces
 
 		** if piece is to be KINGed:
 		** plan-VIRT king the piece
@@ -447,59 +472,84 @@ public class Board {
 		** else plan-PHYS king the piece
 		*/
 
-		byte f;
+		byte f, ksrc, kdst; // placeholder for any flag, src, dst, needed
 
+		// match Turn t to changes made to the physical board
 		if ((f = chg[t.dst&B]) == NONE || (f & 0x0C) != 0x0C) { return null; }
 		chgm[f].remove(t.dst);
-
 		if ((f = chg[t.src&B]) == NONE || (f & 0x0C) != 0x04) { return null; }
 		chgm[f].remove(t.src);
 
-		virt.add(new Move(t.src, t.dst)); // plan-VIRT src-dst
-
+		virt.add(new Move(t.src, t.dst));
 
 		// indexs for the free reserves array
 		// fres[0]: enemy normal; fres[3]: allied king
 		int frENi = 0, frEKi = 0, frANi = 0, frAKi = 0;
 
+		Iterator<Byte> itrb; // placeholder for any iterators needed
+
 		int notcapt = 0;
-		byte ksrc, kdst;
 		for (byte capt : t.capt) {
+			Move capture;
 
 			if ((f = chg[capt&B]) == NONE) {
 				// not captured yet, assign a free reserve for it
 				try {
-					kdst = cell[capt&B].isKing()? fres[1][frEKi++]: fres[0][frENi++];
+					kdst = cell[capt&B].king? fres[1][frEKi++]: fres[0][frENi++];
 				} catch (ArrayIndexOutOfBoundsException e) {
 					throw new NoFreeReserveCellsLeftException(e);
 				}
-				Move capture = new Move(capt, kdst);
+
+				capture = new Move(capt, kdst);
 				phys.add(capture);
-				virt.add(capture);
 				++notcapt;
 			} else {
-				// already captured, work out which cell it went to
-				// TODO:
+				// already captured
+				// find a cell that the piece could have been moved to
+				if (chgm[f = (byte)(C_INS|0|(cell[capt&B].king?C_KING:0)|0)].size() == 0) { return null; }
+				itrb = chgm[f].iterator();
+				kdst = itrb.next(); itrb.remove();
+
+				capture = new Move(capt, kdst);
 			}
+			virt.add(capture);
 		}
 
 		if (notcapt >= highest[0]) { return null; }
 		else { highest[0] = notcapt; }
 
-		if (!cell[t.src].isKing() && levelUp(t.dst)) {
-			// TODO: test for already done king
+		if (!cell[t.src&B].king && levelUp(t.dst)) {
+			Move nrmoff, kingon;
+			if (chgm[f = 0|0|C_KING|C_ALLY].size() > chgm[C_INS|0|C_KING|C_ALLY].size()) {
+				// king already done
+				itrb = chgm[f].iterator();
+				ksrc = itrb.next(); itrb.remove();
 
-			kdst = fres[2][frANi++];
-			byte[] kres = getReserves(true, true, true);
-			try {
-				ksrc = kres[0];
-			} catch (ArrayIndexOutOfBoundsException e) {
-				throw new NoKingsLeftException(e);
+				// find a cell that the normal piece could have been moved to
+				if (chgm[f = C_INS|0|0|C_ALLY].size() == 0) { return null; }
+				itrb = chgm[f].iterator();
+				kdst = itrb.next(); itrb.remove();
+
+				nrmoff = new Move(t.dst, kdst);
+				kingon = new Move(ksrc, t.dst);
+			} else {
+				// king not done yet
+				kdst = fres[2][frANi++];
+				byte[] kres = getReserves(true, true, true);
+				try {
+					ksrc = kres[0];
+				} catch (ArrayIndexOutOfBoundsException e) {
+					throw new NoKingsLeftException(e);
+				}
+
+				nrmoff = new Move(t.dst, kdst);
+				kingon = new Move(ksrc, t.dst);
+				phys.add(nrmoff);
+				phys.add(kingon);
 			}
-			virt.add(new Move(t.dst, kdst));
-			virt.add(new Move(ksrc, t.dst));
+			virt.add(nrmoff);
+			virt.add(kingon);
 		}
-
 
 		/* error-correcting, optional extra
 		**
@@ -524,6 +574,10 @@ public class Board {
 		** FIX ins-dead
 		** plan-VIRT ins extra ins-dead
 		*/
+
+		// make sure there are no more extraneous changes
+		// depending on how advanced the error-correction above is, this could be removed
+		for (HashSet<Byte> hb : chgm) { if (hb.size() > 0) { return null; } }
 
 		return new PendingChanges(t, phys.toArray(new Move[phys.size()]), virt.toArray(new Move[virt.size()]));
 	}
@@ -554,28 +608,6 @@ public class Board {
 	}
 
 
-	final static byte[][] RES = new byte[][]{
-		new byte[]{-0x70, -0x69, -0x68, -0x67, 0x48, 0x49, 0x58, 0x59, 0x68, 0x69, 0x78, 0x79}, // BN
-		new byte[]{-0x6F, -0x6E, -0x6D, -0x6C, -0x6B, -0x6A}, // BK
-		new byte[]{-0x80, -0x79, -0x78, -0x77, 0x08, 0x09, 0x18, 0x19, 0x28, 0x29, 0x38, 0x39}, // WN
-		new byte[]{-0x7F, -0x7E, -0x7D, -0x7C, -0x7B, -0x7A}, // WK
-	};
-
-	public byte[] getReserves(boolean full, boolean ally, boolean king) {
-		byte[] free = new byte[12];
-		int h = (who==ally?1:0)*2 + (king?1:0);
-		int f = 0;
-
-		if (full) { for (byte b : RES[h]) { if (cell[b&B] != null) { free[f++] = b; } } }
-		else { for (byte b : RES[h]) { if (cell[b&B] == null) { free[f++] = b; } } }
-
-		byte[] fr = new byte[f];
-		for (--f; f>=0; --f) { fr[f] = free[f]; }
-
-		return fr;
-	}
-
-
 	/*************************************************************************
 	 * Execute turn
 	 *************************************************************************/
@@ -588,6 +620,7 @@ public class Board {
 		return this;
 	}
 
+	// TODO SPEC: maybe have this throw an exception / warning lights instead
 	private Board restoreBoardState() {
 		System.out.println("got here, the reset part");
 		// restore previous board state
@@ -614,7 +647,7 @@ public class Board {
 		return p;
 	}
 
-	public class PendingChanges {
+	private class PendingChanges {
 
 		Turn turn;
 		Move[] phys;
@@ -628,20 +661,24 @@ public class Board {
 
 		public void execute() {
 
-			for (Move m : virt) {
+			for (Move p : phys) {
+				// Pathing.execute(p);
+			}
+
+			for (Move v : virt) {
 			// move from src to dst
-				System.out.printf("virtual move: 0x%02x to 0x%02x\n", m.src, m.dst);
-				movePiece(m.src, m.dst);
+				// System.out.printf("virtual move: 0x%02x to 0x%02x\n", v.src, v.dst);
+				movePiece(v.src, v.dst);
 			}
 
 		}
 	}
 
-	public class NoKingsLeftException extends java.lang.RuntimeException {
+	private class NoKingsLeftException extends java.lang.RuntimeException {
 		public NoKingsLeftException(Throwable e) { super(e); }
 	}
 
-	public class NoFreeReserveCellsLeftException extends java.lang.RuntimeException {
+	private class NoFreeReserveCellsLeftException extends java.lang.RuntimeException {
 		public NoFreeReserveCellsLeftException(Throwable e) { super(e); }
 	}
 
