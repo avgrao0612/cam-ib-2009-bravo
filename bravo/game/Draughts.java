@@ -10,7 +10,7 @@ public class Draughts {
 
 	private Player black;
 	private Player white;
-	private Piece[] ps;
+	private Piece[] ps; // remove
 
 	private Turn[] history; // code this
 
@@ -20,6 +20,7 @@ public class Draughts {
 		black.sit(this, false);
 		white.sit(this, true);
 
+		// TODO move to Board
 		// init pieces
 		byte[] white = {0x77, 0x75, 0x73, 0x71, 0x66, 0x64, 0x62, 0x60, 0x57, 0x55, 0x53, 0x51,
 			-0x7F, -0x7E, -0x7D, -0x7C, -0x7B, -0x7A};
@@ -72,7 +73,6 @@ public class Draughts {
 	public static void testMain() {
 
 		int[] test = null;
-		System.out.println(String.format("%02x", 6));
 		/*byte b = -1;
 		System.out.println(b & Board.B);
 		System.out.println(b);

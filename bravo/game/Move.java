@@ -9,13 +9,9 @@ package bravo.game;
 
 public class Move {
 
-// Constructor should take (int From, int To, Piece piece)
-
-	final Piece p;
 	final byte src, dst;
 
-	public Move(Piece piece, byte s, byte d) {
-		p = piece;
+	public Move(byte s, byte d) {
 		src = s;
 		dst = d;
 	}
