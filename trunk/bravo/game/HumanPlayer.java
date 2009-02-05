@@ -13,14 +13,13 @@ public class HumanPlayer extends Player {
 		do {
 			System.out.print((side?"white":"black")+" is not ready..." + i + "\r");
 			try {
-				Thread.sleep(500);
+				Thread.sleep(250);
 				++i;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		} while(!inputReady());
 
-		// TODO make basic detection of invalid move (one invalid remove, one invalid add)
 		return this;
 
 	}
