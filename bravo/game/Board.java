@@ -360,6 +360,8 @@ public class Board {
 		return (HashSet<Turn>)vt.clone();
 	}
 
+	// TODO: research draw conditions
+
 
 	/*************************************************************************
 	 * Validate state-skeleton
@@ -662,7 +664,7 @@ public class Board {
 		public void execute() {
 
 			for (Move p : phys) {
-				// Pathing.execute(p);
+				// TODO SPEC: Pathing.execute(p);
 			}
 
 			for (Move v : virt) {

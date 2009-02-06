@@ -5,6 +5,7 @@ package bravo.game;
 public class HumanPlayer extends Player {
 
 	private boolean inputReady() {
+		// TODO SPEC: player has made a turn
 		return true;
 	}
 
@@ -13,7 +14,7 @@ public class HumanPlayer extends Player {
 		do {
 			System.out.print((side?"w":"b")+" not ready: " + i + "\r");
 			try {
-				Thread.sleep(250);
+				Thread.sleep(4000);
 				++i;
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -23,6 +24,5 @@ public class HumanPlayer extends Player {
 		return true;
 
 	}
-
 
 }
