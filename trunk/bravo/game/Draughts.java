@@ -40,10 +40,10 @@ public class Draughts {
 
 	public static void main(String[] args) {
 		testSuite();
-
 		// TODO SPEC: let player decide who to go first, make the other one AIPlayer
 
-		Draughts game = new Draughts(new HumanPlayer(), new HumanPlayer());
+		double pi = (args.length == 0)? 1: Double.parseDouble(args[0]);
+		Draughts game = new Draughts(new HumanPlayer(pi), new HumanPlayer(pi));
 		game.play();
 
 	}
