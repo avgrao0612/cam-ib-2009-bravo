@@ -18,12 +18,12 @@
   * This must define a `doTurn()` method that returns a boolean, signalling resignation.
   * The `doTurn()` method must also result in the piece on the `src` square being *physically moved* to the `dst` square. This will later be detected by `Board`, which will then process it as described above.
 
-*`HumanPlayer`* - `doTurn()` returns when it has received a signal from the hardware indcating that the player has completed their turn.
-*`AIPlayer`* - `doTurn()` returns after it has physically executed the `src`-`dst` part of a `Turn` returned by the `AI`.
+*`HumanPlayer`* - `doTurn()` returns when it has received a signal from the hardware indcating that the player has completed their turn.<br />
+*`AIPlayer`* - `doTurn()` returns after it has physically executed the `src`-`dst` part of a `Turn` returned by the `AI`.<br />
 
-*`Piece`* - a class containing immutable `id`, `side`, `king` fields, and one mutable field `pos`.
-*`Turn`* - a class containing immutable `src`, `dst` fields, and an immutable `capt[]` array.
-*`Move`* - a class containing immutable `src`, `dst` fields.
+*`Piece`* - a class containing immutable `id`, `side`, `king` fields, and one mutable field `pos`.<br />
+*`Turn`* - a class containing immutable `src`, `dst` fields, and an immutable `capt[]` array.<br />
+*`Move`* - a class containing immutable `src`, `dst` fields.<br />
 
 *`Pathing`* - work out the path that needs to be taken by a `Move`, and tell `HWInterface` to execute this.
 
