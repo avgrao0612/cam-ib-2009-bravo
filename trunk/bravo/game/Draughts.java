@@ -28,11 +28,11 @@ public class Draughts {
 		return this;
 	}
 
-	public boolean nextTurn() {
+	private boolean nextTurn() {
 		return board.who()? white.doTurn(): black.doTurn();
 	}
 
-	public Draughts handleWinner() {
+	private Draughts handleWinner() {
 		System.out.println(board.who()?"black wins":"white wins");
 		return this;
 	}
