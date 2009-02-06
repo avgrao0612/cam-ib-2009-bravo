@@ -1,4 +1,4 @@
-#summary Amendments to the specification (01), made by Ximin Luo.
+#summary Amendments (01) to the specification, made by Ximin Luo.
 
 == Classes ==
 
