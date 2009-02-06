@@ -28,7 +28,7 @@
 *`Pathing`* - work out the path that needs to be taken by a `Move`, and tell `HWInterface` to execute this.
 
 *`HWInterface`* - interface between HW/SW
-  * retrieve which sides are `Human`, which sides are `AI`.
+  * retrieve what type of game to start (black:`Human` vs white:`AI`, or whatever).
   * retrieve the current state of the board as a `boolean[256]`
   * retrieve whether a human player has finished their turn, or resigned.
   * signal that the board is in a state of error
