@@ -18,7 +18,7 @@
   * This must define a `doTurn()` method that returns a boolean, signalling resignation.
   * The `doTurn()` method must also result in the piece on the `src` square being *physically moved* to the `dst` square. This will later be detected by `Board`, which will then process it as described above.
 
-*`HumanPlayer`* - `doTurn()` returns when it has received a signal from the hardware indcating that the player has completed their turn.<br />
+*`HumanPlayer`* - `doTurn()` returns when it has received a signal from the hardware indcating that the player has completed their turn, or resigned.<br />
 *`AIPlayer`* - `doTurn()` returns after it has physically executed the `src`-`dst` part of a `Turn` returned by the `AI`.<br />
 
 *`Piece`* - a class containing immutable `id`, `side`, `king` fields, and one mutable field `pos`.<br />
@@ -30,7 +30,7 @@
 *`HWInterface`* - interface between HW/SW
   * retrieve which sides are `Human`, which sides are `AI`.
   * retrieve the current state of the board as a `boolean[256]`
-  * retrieve whether a human player has finished their turn or not.
+  * retrieve whether a human player has finished their turn, or resigned.
   * signal that the board is in a state of error
   * signal a move to be made by the magnets and motors
 
