@@ -12,7 +12,7 @@
   * When these are finalised, they will be put into a `PendingChanges` object, whose `execute()` method will then be called. After this is complete, `Board` should then be in a fully correct and consistent state ready for the next turn, and control will be returned back to `Draughts`.
 
 *`Board$PendingChanges`* - represents the changes pending to the board state.
-  * Upon `execute()`, its virtual `Move`s will be executed by the software, and its physical `Move`s will be passed to `Pathing`.
+  * Upon `execute()`, its virtual `Move`s will be enacted by `Board`, and its physical `Move`s will be passed to `Pathing`.
 
 *`Player`* - represents a player.
   * This must define a `doTurn()` method that returns a boolean, signalling resignation.
