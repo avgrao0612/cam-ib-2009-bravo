@@ -42,7 +42,12 @@ represents the distination square of a move.
             int endY=ycoordinate(move.dst);
             Vector path=new Vector();
             Vector paths=new Vector();
-
+            for(int i=0;i<board.length;i++)
+            {
+                for(int j=0;j<board[i].length;j++)
+                  System.out.print(board[i][j]+" ");
+                System.out.println();
+            }
             switch(direction(move))
             {
                 case 1:goToTop(board,startX,startY,endX,path,paths);break;
@@ -65,15 +70,15 @@ represents the distination square of a move.
 
     private int xcoordinate(byte a)
     {
-        int x = a & 0x0F;
-        return (x < 8)? x+1: (x == 8)? 0: (x == 9)? 9: -1;
+        int x = (a >> 4) & 0x0F;
+        return (x < 8)? 8-x: (x == 8)? 9: (x == 9)? 0: -1;
     }
 //Find the x-coordinate of a square given its square number. Return -1
 //if no such square exists.
 
     private int ycoordinate(byte a)
     {
-        int y = a >>> 4;
+        int y = a & 0x0F;
         return (y < 8)? y+1: (y == 8)? 0: (y == 9)? 9: -1;
     }
 //Find the y-coordinate of a square given its square number. Return -1
@@ -429,11 +434,12 @@ represents the distination square of a move.
 //Find the shortest path among all paths. Return null if no valid paths available
     public static void main(String[] args)
     {
-        Move m=new Move((byte)0x08,(byte)0x79);
+        Move m=new Move((byte)0x45,(byte)0x87);
         Pathing p=new Pathing();
         int[] a=p.path(m);
         for(int i=0;i<a.length;i++)
             System.out.print(a[i]+" ");
         System.out.println();
     }
+//Some tests. Have this removed when implementing it.
 }
