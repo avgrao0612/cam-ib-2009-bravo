@@ -11,9 +11,9 @@ class GoToTop extends Thread  //The thread responsible for calculating the path 
      private int y;
      private int topBound;
      private long path;
-     private Vector<Long> paths;
+     private Vector paths;
 
-     public GoToTop(int[][] board,int x,int y,int topBound,long path,Vector<Long> paths)
+     public GoToTop(int[][] board,int x,int y,int topBound,long path,Vector paths)
      {
           this.board=board;
           this.x=x;
@@ -54,7 +54,7 @@ class GoToTop extends Thread  //The thread responsible for calculating the path 
          {
              path*=10;
              path+=isPathComplete;
-             paths.addElement(new Long(path));
+             paths.addElement(path);
          }
 /*If the distination can be reached at the next move, store this move and add this
   path to the set of all valid paths.
@@ -116,9 +116,9 @@ class GoToRight extends Thread  //The thread responsible for calculating the pat
      private int y;
      private int rightBound;
      private long path;
-     private Vector<Long> paths;
+     private Vector paths;
 
-     public GoToRight(int[][] board,int x,int y,int rightBound,long path,Vector<Long> paths)
+     public GoToRight(int[][] board,int x,int y,int rightBound,long path,Vector paths)
      {
           this.board=board;
           this.x=x;
@@ -148,7 +148,7 @@ class GoToRight extends Thread  //The thread responsible for calculating the pat
           {
               path*=10;
               path+=isPathComplete;
-              paths.addElement(new Long(path));
+              paths.addElement(path);
           }
           else if(y+1>=rightBound) return;
           else
@@ -203,9 +203,9 @@ class GoToBottom extends Thread  //Thread responsible for calculating the path t
      private int y;
      private int bottomBound;
      private long path;
-     private Vector<Long> paths;
+     private Vector paths;
 
-     public GoToBottom(int[][] board,int x,int y,int bottomBound,long path,Vector<Long> paths)
+     public GoToBottom(int[][] board,int x,int y,int bottomBound,long path,Vector paths)
      {
           this.board=board;
           this.x=x;
@@ -232,7 +232,7 @@ class GoToBottom extends Thread  //Thread responsible for calculating the path t
           if(isPathComplete!=0)
           {   path*=10;
               path+=isPathComplete;
-              paths.addElement(new Long(path));
+              paths.addElement(path);
           }
           else if(x+1>=bottomBound) return;
           else
@@ -289,9 +289,9 @@ class GoToLeft extends Thread  //Thread responsible for calculating the path tow
      private int y;
      private int leftBound;
      private long path;
-     private Vector<Long> paths;
+     private Vector paths;
 
-     public GoToLeft(int[][] board,int x,int y,int leftBound,long path,Vector<Long> paths)
+     public GoToLeft(int[][] board,int x,int y,int leftBound,long path,Vector paths)
      {    this.board=board;
           this.x=x;
           this.y=y;
@@ -319,7 +319,7 @@ class GoToLeft extends Thread  //Thread responsible for calculating the path tow
           {
               path*=10;
               path+=isPathComplete;
-              paths.addElement(new Long(path));
+              paths.addElement(path);
           }
           else if(y-1<=leftBound) return;
           else
@@ -404,7 +404,7 @@ represents the distination square of a move.
             int startY=ycoordinate(move.src);
             int endX=xcoordinate(move.dst);
             int endY=ycoordinate(move.dst);
-            Vector<Long> paths=new Vector<Long>();
+            Vector paths=new Vector();
             GoToTop g1=null;
             GoToRight g2=null;
             GoToBottom g3=null;
@@ -514,7 +514,7 @@ represents the distination square of a move.
     }
 //Count the number of movements needed for a calculated path.
 
-    private int[] bestRoute(Vector<Long> v)
+    private int[] bestRoute(Vector v)
     {
          if(v.size()==0) return null;
          else
@@ -541,7 +541,7 @@ represents the distination square of a move.
 //Find the shortest path among all paths. Return null if no valid paths available
     public static void main(String[] args)
     {
-        Move m=new Move((byte)0x40,(byte)0x22);
+        Move m=new Move(0x40,0x22);
         Pathing p=new Pathing();
         int[] a=p.path(m);
         for(int i=0;i<a.length;i++)
