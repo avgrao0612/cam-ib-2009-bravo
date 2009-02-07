@@ -429,7 +429,7 @@ represents the distination square of a move.
 //Find the shortest path among all paths. Return null if no valid paths available
     public static void main(String[] args)
     {
-        Move m=new Move(0x08,0x79);
+        Move m=new Move((byte)0x08,(byte)0x79);
         Pathing p=new Pathing();
         int[] a=p.path(m);
         for(int i=0;i<a.length;i++)
@@ -437,4 +437,3 @@ represents the distination square of a move.
         System.out.println();
     }
 }
-
