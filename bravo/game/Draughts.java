@@ -43,6 +43,7 @@ public class Draughts {
 		// TODO SPEC: let player decide who to go first, make the other one AIPlayer
 
 		double pi = (args.length == 0)? 1: Double.parseDouble(args[0]);
+		//Draughts game = new Draughts(new HumanPlayer(pi), new AIPlayer(pi));
 		Draughts game = new Draughts(new HumanPlayer(pi), new HumanPlayer(pi));
 		game.play();
 
@@ -51,6 +52,12 @@ public class Draughts {
 	public static void printByteArray(String t, byte[] bs) {
 		System.out.print(t + ": [ ");
 		for (byte b: bs) { System.out.printf("0x%02x ",b); }
+		System.out.println("]");
+	}
+
+	public static void printIntArray(String t, int[] bs) {
+		System.out.print(t + ": [ ");
+		for (int b: bs) { System.out.printf("0x%02x ",b); }
 		System.out.println("]");
 	}
 

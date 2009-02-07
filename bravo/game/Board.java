@@ -44,12 +44,44 @@ public class Board {
 			-0x6F, -0x6E, -0x6D, -0x6C, -0x6B, -0x6A};
 			// 0x91, 0x92, 0x93, 0x94, 0x95, 0x96};
 		for (int i=0; i<18; ++i) {
-			cell[black[i]&B] = new Piece((byte)i, false, !inPlay(black[i]), black[i]);
-			cell[white[i]&B] = new Piece((byte)i, true, !inPlay(white[i]), white[i]);
+			cell[black[i]&B] = new Piece(false, !inPlay(black[i]), black[i]);
+			cell[white[i]&B] = new Piece(true, !inPlay(white[i]), white[i]);
 		}
 
 		vt = new HashSet<Turn>();
 		setValidTurns();
+	}
+
+	// returns a Board object of t applied to the current Board
+	public Board nextState(Turn t) {
+		if (!vt.contains(t)) { return null; }
+		Board c = new Board();
+		c.cell = cell.clone();
+
+		c.cell[t.dst&B] = c.cell[t.src&B];
+		c.cell[t.src&B] = null;
+
+		for (byte capt : t.capt) { c.cell[capt&B] = null; }
+
+		if (!cell[t.dst&B].king && c.levelUp(t.dst)) {
+			c.cell[t.dst&B] = new Piece(c.who, true, t.dst);
+		}
+
+		c.who = !who;
+		c.setValidTurns();
+		return this;
+	}
+
+	// returns the ratio of the current player's pieces to the total
+	public double piecesRatio(/*boolean side*/) {
+		int black = 0, white = 0, total = 0;
+		for (Piece p : cell) {
+			if (p == null || !inPlay(p.pos)) { continue; }
+			if (p.side) { ++white; } else { ++black; }
+			++total;
+		}
+		// return side? white/total: black/total;
+		return who? white/total: black/total;
 	}
 
 	// prints ASCII graphic of the cell
@@ -367,35 +399,22 @@ public class Board {
 	 * Validate state-skeleton
 	 *************************************************************************/
 
-	Random rdx = new Random();
-	private boolean[] getRandomTurn() {
-		// testing code ONLY
-		boolean[] skel = new boolean[256];
-
-		for (Piece p : cell) {
-			if (p!=null) { skel[p.pos&B] = true; }
-		}
-
-		// pick a random turn
-		Turn k = null;
-		int s = rdx.nextInt(getValidTurns().size());
-		int i = 0;
-		for (Turn t : getValidTurns()) {
-			if (i++ == s) {
-				k = t; break;
-			}
-		}
-		System.out.println(k);
-
-		skel[k.src&B] = !skel[k.src&B];
-		skel[k.dst&B] = !skel[k.dst&B];
-
+	private boolean[] getStateSkel() {
+		// TODO SPEC: get actual user input
 		return skel;
 	}
 
-	private boolean[] getStateSkel() {
-		// TODO SPEC: get actual user input
-		return getRandomTurn();
+	private boolean[] skel;
+	//REMOVE THIS SHIT LATER
+	public void setStateSkel(byte src, byte dst) {
+		skel = new boolean[256];
+		// turn current state into skeleton
+		for (Piece p : cell) {
+			if (p!=null) { skel[p.pos&B] = true; }
+		}
+		// apply new skeleton
+		skel[src&B] = false;
+		skel[dst&B] = true;
 	}
 
 	// returns the changes between the current state and s

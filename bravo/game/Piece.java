@@ -4,14 +4,12 @@ package bravo.game;
 
 public class Piece {
 
-	final byte id;
 	final boolean side;
 	final boolean king;
 
 	byte pos;
 
-	public Piece(byte i, boolean s, boolean k, byte p) {
-		id = i;
+	public Piece(boolean s, boolean k, byte p) {
 		side = s;
 		king = k;
 		pos = p;
