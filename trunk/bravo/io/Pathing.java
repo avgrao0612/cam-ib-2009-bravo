@@ -1,16 +1,16 @@
 //Pathing is responsible for taking a series of Moves and calculating the best way to
 //move the head from one square to another in order to drag a piece to its destination
-//quickly and undisturbed. 
+//quickly and undisturbed.
 package bravo.game;
 
 import java.util.Vector;
-public class Pathing 
+public class Pathing
 {
 /*Coordinate system of boardStatus:
                    White Player
-       0   1   2   3   4   5   6   7   8   9  y    
+       0   1   2   3   4   5   6   7   8   9  y
       _______________________________________
-  0  |___|___|___|___|___|___|___|___|___|___|    
+  0  |___|___|___|___|___|___|___|___|___|___|
   1  |___|_W_|_B_|_W_|_B_|_W_|_B_|_W_|_B_|___|
   2  |___|_B_|_W_|_B_|_W_|_B_|_W_|_B_|_W_|___|
   3  |___|_W_|_B_|_W_|_B_|_W_|_B_|_W_|_B_|___|
@@ -23,19 +23,7 @@ public class Pathing
   x                Black Player
 For each element, 0 represents an empty square, 2 represents an occupied square and 3
 represents the distination square of a move.
-*/    
-    private int[][] squareNumber={{0x98,0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,0x99},
-                                   {0x78,0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,0x79},
-                                   {0x68,0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,0x69},
-                                   {0x58,0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x59},
-                                   {0x48,0x40,0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x49},
-                                   {0x38,0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x39},
-                                   {0x28,0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x29},
-                                   {0x18,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x19},
-                                   {0x08,0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x09},
-                                   {0x88,0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,0x89}};
-//Reference matrix used to convert the identifier of each square into coordinates of
-//boardstatus and vise varsa.
+*/
 
     public int[] path (Move move)
     {
@@ -54,7 +42,7 @@ represents the distination square of a move.
             int endY=ycoordinate(move.dst);
             Vector path=new Vector();
             Vector paths=new Vector();
-            
+
             switch(direction(move))
             {
                 case 1:goToTop(board,startX,startY,endX,path,paths);break;
@@ -74,28 +62,25 @@ represents the distination square of a move.
 //individual movement to achieve it. It returns null if there is no valid
 //path that can be generated, though theoretically that should never happen
 //as long as the game is played in a resonable manner.
-    
-    private int xcoordinate(int a)
-    {    
-        for(int i=0;i<squareNumber.length;i++)
-            for(int j=0;j<squareNumber[i].length;j++)
-                if(squareNumber[i][j]==a) return i;
-        return -1;
+
+    private int xcoordinate(byte a)
+    {
+        int x = a & 0x0F;
+        return (x < 8)? x+1: (x == 8)? 0: (x == 9)? 9: -1;
     }
 //Find the x-coordinate of a square given its square number. Return -1
 //if no such square exists.
 
-    private int ycoordinate(int a)
-    {    for(int i=0;i<squareNumber.length;i++)
-             for(int j=0;j<squareNumber[i].length;j++)
-                  if(squareNumber[i][j]==a) return j;
-         return -1;
+    private int ycoordinate(byte a)
+    {
+        int y = a >>> 4;
+        return (y < 8)? y+1: (y == 8)? 0: (y == 9)? 9: -1;
     }
 //Find the y-coordinate of a square given its square number. Return -1
 //if no such square exists.
 
     private int[][] setBoard(Move move)
-    {  
+    {
         int[][] board=new int[10][];
         for(int i=0;i<board.length;i++)
            board[i]=new int[10];
@@ -391,7 +376,7 @@ represents the distination square of a move.
         int endX=xcoordinate(move.dst);
         int endY=ycoordinate(move.dst);
         if(endY==startY)
-        {   
+        {
             if(endX<startX) return 1;
             else return 3;
         }
@@ -420,7 +405,7 @@ represents the distination square of a move.
 */
 
     private int[] bestRoute(Vector v)
-    {   
+    {
          if(v.size()==0) return null;
          else
          {
@@ -440,7 +425,7 @@ represents the distination square of a move.
              }
              return c;
          }
-    }    
+    }
 //Find the shortest path among all paths. Return null if no valid paths available
     public static void main(String[] args)
     {
@@ -452,3 +437,4 @@ represents the distination square of a move.
         System.out.println();
     }
 }
+
