@@ -7,13 +7,13 @@ package bravo.game;
 // Depends on Piece
 // Depended on by most of the software side, in particular Board, AI and Pathing
 
-public class Move
-{
-	final int src, dst;
+public class Move {
 
-	public Move(byte s, byte d)
-    {
+	final byte src, dst;
+
+	public Move(byte s, byte d) {
 		src = s;
 		dst = d;
 	}
+
 }
