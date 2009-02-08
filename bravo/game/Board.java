@@ -61,15 +61,11 @@ public class Board {
 		Board c = new Board(true);
 		c.cell = cell.clone();
 
-		boolean k = c.cell[t.src&B].king;
-		c.cell[t.dst&B] = new Piece(c.who, k, t.dst);
+		boolean k = c.cell[t.src&B].king || c.levelUp(t.dst);
+		c.cell[t.dst&B] = new Piece(who, k, t.dst);
 		c.cell[t.src&B] = null;
 
 		for (byte capt : t.capt) { c.cell[capt&B] = null; }
-
-		if (!k && c.levelUp(t.dst)) {
-			c.cell[t.dst&B] = new Piece(c.who, true, t.dst);
-		}
 
 		c.who = !who;
 		c.setValidTurns();
@@ -81,8 +77,9 @@ public class Board {
 		int black = 0, white = 0, total = 0;
 		for (Piece p : cell) {
 			if (p == null || !inPlay(p.pos)) { continue; }
-			if (p.side) { ++white; } else { ++black; }
-			++total;
+			int w = p.king? 2: 1;
+			if (p.side) { white+=w; } else { black+=w; }
+			total+=w;
 		}
 		// return side? (double)white/total: (double)black/total;
 		return who? (double)white/total: (double)black/total;
@@ -667,7 +664,7 @@ public class Board {
 		who = !who;
 		setValidTurns();
 		System.err.print(this);
-		//System.out.println("avail moves:"); for (Turn t : vt) { System.out.println(t); }
+		//System.err.println("avail moves:"); for (Turn t : vt) { System.err.println(t); }
 		return this;
 	}
 
@@ -699,7 +696,7 @@ public class Board {
 
 			for (Move v : virt) {
 			// move from src to dst
-				// System.out.printf("virtual move: 0x%02x to 0x%02x\n", v.src, v.dst);
+				// System.err.printf("virtual move: 0x%02x to 0x%02x\n", v.src, v.dst);
 				movePiece(v.src, v.dst);
 			}
 

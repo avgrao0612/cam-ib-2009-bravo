@@ -40,27 +40,28 @@ public class Draughts {
 
 	public static void main(String[] args) {
 		testSuite();
-		// TODO SPEC: let player decide who to go first, make the other one AIPlayer
 
-		double pi = (args.length < 1)? 1: Double.parseDouble(args[0]);
-		int tough = (args.length < 2)? 5: Integer.parseInt(args[1]);
-		//Draughts game = new Draughts(new HumanPlayer(pi), new AIPlayer(pi));
-		Draughts game = new Draughts(new AIPlayer(pi, tough), new HumanPlayer(pi));
-		game.play();
+		try {
+			// TODO SPEC: make this use HWInterface instead
+			Player b = (args[0].equals("H"))? new HumanPlayer(): new AIPlayer(Integer.parseInt(args[0]));
+			Player w = (args[1].equals("H"))? new HumanPlayer(): new AIPlayer(Integer.parseInt(args[1]));
+			Draughts game = new Draughts(b, w);
+			game.play();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("Usage: Draughts [black] [white]");
+			System.err.println("H means a human player; a number means an AI player with that toughness (pecommended 7).");
+			System.exit(2);
+		}
 
 	}
 
-	public static void printByteArray(String t, byte[] bs) {
-		System.out.print(t + ": [ ");
-		for (byte b: bs) { System.out.printf("0x%02x ",b); }
-		System.out.println("]");
-	}
-
-	public static void printIntArray(String t, int[] bs) {
-		System.out.print(t + ": [ ");
-		for (int b: bs) { System.out.printf("0x%02x ",b); }
-		System.out.println("]");
-	}
+	/*public static void printByteArray(String t, byte[] bs) {
+		System.err.print(t + ": [ ");
+		for (byte b: bs) { System.err.printf("0x%02x ",b); }
+		System.err.println("]");
+	}*/
 
 	public static void testSuite() {
 

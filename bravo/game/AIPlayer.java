@@ -11,26 +11,24 @@ package bravo.game;
 
 public class AIPlayer extends Player{
 
-	protected double score = 0.0;
-
-	public AIPlayer(double p, int t) {
-		pollint = p; // TODO: debug only, remove later
+	public AIPlayer(int t) {
 		tough = t;
 	}
 
 	// initialise variables
+	//private int turns = 0;
 	protected int tough=5;
 
-	protected double scoreForTree(boolean side, Board b, int depth){
+	protected double scoreForTree(Board b, int depth, String pre){
 		if (depth == 0) { return b.piecesRatio(); }
 		double lowest = 1.0;
 
-		Turn k = null;
 		for (Turn t: b.getValidTurns())
 		{
-			double s = scoreForTree(side, b.nextState(t), depth-1);
-			if (s<lowest) { k = t; lowest = s; }
-			if (lowest <= 0.0) { break; } // optimise
+			double s = scoreForTree(b.nextState(t), depth-1, pre + " |");
+			// if (turns > 8 && depth > 3) { System.err.println(pre + "-" + t + " " + s); }
+			if (s<lowest) { lowest = s; }
+			if (lowest <= 0.0) { break; } // optimisation
 		}
 
 		//System.err.print(depth + " " + k + ", score: " + (1.0-lowest) + "\r");
@@ -46,40 +44,34 @@ public class AIPlayer extends Player{
 		//}
 		//else{
 		Turn turn = null;
-		double highest = 0;
 		double lowest = 1.0;
 
 		for (Turn t: b.getValidTurns())
 		{
 			System.err.print(t + ", score: ");
-			double s = scoreForTree(b.who(), b.nextState(t), depth-1);
+			double s = scoreForTree(b.nextState(t), depth-1, " |");
+			// System.err.print(t + ", score: ");
 			System.err.printf("%.4f", 1.0-s);
 
 			// if turn is null then it's a guaranteed loss
 			if (turn == null || s < lowest) { turn = t; lowest = s; }
 
 			System.err.print((turn == null)? "\r": " | " + turn + "\r");
-			if (lowest <= 0.0) { break; } // optimise
+			if (lowest <= 0.0) { break; } // optimisation
 		}
 
 		return turn;
 		//}
 	}
 
-
-	final double pollint;
-
 	public boolean doTurn(){
 
-		try {
-			Thread.sleep((int)(pollint * 1000));
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-
 		Turn bestTurn = bestTree(game.board, tough);
-		if (bestTurn!=null){
+		System.err.println("");
+
+		if (bestTurn != null){
 			game.board.setStateSkel(bestTurn.src, bestTurn.dst);
+			//++turns;
 		}
 		return true;
 	}
