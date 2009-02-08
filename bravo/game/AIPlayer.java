@@ -1,5 +1,3 @@
-package bravo.game;
-
 // Contains the AI engine for playing draughts.
 // Should abide by all the rules of Draughts given in the requirements specification.
 // Arguments that could be passed in nextTurn are instead given in constructor and should be stored.
@@ -8,23 +6,82 @@ package bravo.game;
 //
 // Depends on Board, Move, Piece
 // Depended on by Draughts
-//
 
-import java.util.Collection;
+package bravo.game;
 
-public abstract class AIPlayer {
+public class AIPlayer extends Player{
 
-// Constructor should take (Board board, boolean isBlack, int timer)
-// board: reference to Board to play on
-// isBlack: is AI playing as black? (or white?)
-// timer: millisecond representation of timer
+	protected double score = 0.0;
 
-// Calculates the best 'turn' possible within the required time.
-// A turn is a collection of Moves, e.g. for a double jump by Black:
-// 1) move black piece beyond first white piece
-// 2) remove first captured piece
-// 3) move black piece to beyond second white piece
-// 4) remove second captured piece.
-public abstract Collection<Move> nextTurn ();
+	public AIPlayer(double p, int t) {
+		pollint = p; // TODO: debug only, remove later
+		tough = t;
+	}
+
+	// initialise variables
+	protected int tough=5;
+
+	protected double scoreForTree(boolean side, Board b, int depth){
+		if (depth == 0) { return b.piecesRatio(); }
+		double lowest = 1.0;
+
+		Turn k = null;
+		for (Turn t: b.getValidTurns())
+		{
+			double s = scoreForTree(side, b.nextState(t), depth-1);
+			if (s<lowest) { k = t; lowest = s; }
+			if (lowest <= 0.0) { break; } // optimise
+		}
+
+		//System.err.print(depth + " " + k + ", score: " + (1.0-lowest) + "\r");
+		return 1.0 - lowest;
+
+	}
+
+	protected Turn bestTree(Board b, int depth){
+		//Board highestBoard = null;
+		//if (tough==0){
+			//doRandomTurn();
+		//return null;
+		//}
+		//else{
+		Turn turn = null;
+		double highest = 0;
+		double lowest = 1.0;
+
+		for (Turn t: b.getValidTurns())
+		{
+			System.err.print(t + ", score: ");
+			double s = scoreForTree(b.who(), b.nextState(t), depth-1);
+			System.err.printf("%.4f", 1.0-s);
+
+			// if turn is null then it's a guaranteed loss
+			if (turn == null || s < lowest) { turn = t; lowest = s; }
+
+			System.err.print((turn == null)? "\r": " | " + turn + "\r");
+			if (lowest <= 0.0) { break; } // optimise
+		}
+
+		return turn;
+		//}
+	}
+
+
+	final double pollint;
+
+	public boolean doTurn(){
+
+		try {
+			Thread.sleep((int)(pollint * 1000));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		Turn bestTurn = bestTree(game.board, tough);
+		if (bestTurn!=null){
+			game.board.setStateSkel(bestTurn.src, bestTurn.dst);
+		}
+		return true;
+	}
 
 }

@@ -9,7 +9,7 @@ package bravo.game;
 
 public class Move {
 
-	final byte src, dst;
+	final public byte src, dst;
 
 	public Move(byte s, byte d) {
 		src = s;

@@ -42,9 +42,10 @@ public class Draughts {
 		testSuite();
 		// TODO SPEC: let player decide who to go first, make the other one AIPlayer
 
-		double pi = (args.length == 0)? 1: Double.parseDouble(args[0]);
+		double pi = (args.length < 1)? 1: Double.parseDouble(args[0]);
+		int tough = (args.length < 2)? 5: Integer.parseInt(args[1]);
 		//Draughts game = new Draughts(new HumanPlayer(pi), new AIPlayer(pi));
-		Draughts game = new Draughts(new HumanPlayer(pi), new HumanPlayer(pi));
+		Draughts game = new Draughts(new HumanPlayer(pi), new AIPlayer(pi, tough));
 		game.play();
 
 	}

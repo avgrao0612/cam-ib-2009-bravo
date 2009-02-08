@@ -20,7 +20,7 @@ public class HumanPlayer extends Player {
 	public boolean doTurn() {
 		int i=0;
 		do {
-			System.out.print((side?"w":"b")+" not ready: " + i + "\r");
+			System.err.print((side?"w":"b")+" not ready: " + i + "\r");
 			try {
 				Thread.sleep((int)(pollint * 1000));
 				++i;

@@ -42,7 +42,7 @@ public class Turn {
 			for (int i=1; i<capt.length; ++i) {
 				out.append(String.format(", 0x%02x", capt[i]));
 			}
-			out.append("] ");
+			out.append("]");
 		}
 		return out.toString();
 	}
