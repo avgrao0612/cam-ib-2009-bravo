@@ -297,16 +297,14 @@ public class Board {
 			cptr[cptr.length-1] = cap;
 		}
 
-		// stop if non-king lands on the king row
-		if (!levelUp(pos) || cell[src&B].king) {
-
+		if (cell[src&B].king) {
 			short frs = halfTestValidJump(pos, true, true, src, cptr);
-			short brs = halfTestValidJump(pos, true, false, src, cptr);
 			short fls = halfTestValidJump(pos, false, true, src, cptr);
-			short bls = halfTestValidJump(pos, false, false, src, cptr);
 			Turn[] fra = getAvailableJumps(src, (byte)(frs>>8), (byte)frs, cptr);
-			Turn[] bra = getAvailableJumps(src, (byte)(brs>>8), (byte)brs, cptr);
 			Turn[] fla = getAvailableJumps(src, (byte)(fls>>8), (byte)fls, cptr);
+			short brs = halfTestValidJump(pos, true, false, src, cptr);
+			short bls = halfTestValidJump(pos, false, false, src, cptr);
+			Turn[] bra = getAvailableJumps(src, (byte)(brs>>8), (byte)brs, cptr);
 			Turn[] bla = getAvailableJumps(src, (byte)(bls>>8), (byte)bls, cptr);
 
 			int len = fra.length + bra.length + fla.length + bla.length;
@@ -319,6 +317,22 @@ public class Board {
 				for (Turn p : bla) { cps[i] = p; ++i; }
 				return cps;
 			}
+
+		} else if (!levelUp(pos)) { // stop if non-king lands on the king row
+			short frs = halfTestValidJump(pos, true, true, src, cptr);
+			short fls = halfTestValidJump(pos, false, true, src, cptr);
+			Turn[] fra = getAvailableJumps(src, (byte)(frs>>8), (byte)frs, cptr);
+			Turn[] fla = getAvailableJumps(src, (byte)(fls>>8), (byte)fls, cptr);
+
+			int len = fra.length + fla.length;
+			if (len > 0) {
+				Turn[] cps = new Turn[len];
+				int i = 0;
+				for (Turn p : fra) { cps[i] = p; ++i; }
+				for (Turn p : fla) { cps[i] = p; ++i; }
+				return cps;
+			}
+
 		}
 
 		return (pos != src)? new Turn[]{new Turn(src, pos, cptr)}: new Turn[]{};
@@ -355,31 +369,11 @@ public class Board {
 			}
 
 			// check jumps
-			if (p.king) {
-				// check jumps in all directions
-				for (Turn j : getAvailableJumps(p.pos)) {
-					if (!jps) { vt.clear(); jps = true; } // first jump encountered clears the set
-					vt.add(j);
-				}
-
-			} else {
-				// check jumps forwards
-				short frs = halfTestValidJump(p.pos, true, true, NONE, new byte[]{});
-				short fls = halfTestValidJump(p.pos, false, true, NONE, new byte[]{});
-				// check subsequent jumps in all directions
-				if ((byte)frs != NONE) {
-					for (Turn j : getAvailableJumps(p.pos, (byte)(frs>>8), (byte)frs, new byte[]{})) {
-						if (!jps) { vt.clear(); jps = true; } // first jump encountered clears the set
-						vt.add(j);
-					}
-				}
-				if ((byte)fls != NONE) {
-					for (Turn j : getAvailableJumps(p.pos, (byte)(fls>>8), (byte)fls, new byte[]{})) {
-						if (!jps) { vt.clear(); jps = true; } // first jump encountered clears the set
-						vt.add(j);
-					}
-				}
+			for (Turn j : getAvailableJumps(p.pos)) {
+				if (!jps) { vt.clear(); jps = true; } // first jump encountered clears the set
+				vt.add(j);
 			}
+
 		}
 
 		return this;
@@ -646,9 +640,10 @@ public class Board {
 
 	// TODO SPEC: maybe have this throw an exception / warning lights instead
 	private Board restoreBoardState() {
-		System.out.println("got here, the reset part");
+		System.out.println("invalid move, press enter to continue");
 		try {
-			byte[] n = new byte[8192]; System.in.read(n);
+			byte[] n = new byte[8192];
+			System.in.read(n);
 		} catch (java.io.IOException e) {
 			System.out.println("IO Error");
 			try {
@@ -657,8 +652,8 @@ public class Board {
 				f.printStackTrace();
 			}
 		}
-		System.exit(2);
-		// restore previous board state
+		//System.exit(2);
+		// restore previous physical board state, or flash warning
 		return this;
 	}
 

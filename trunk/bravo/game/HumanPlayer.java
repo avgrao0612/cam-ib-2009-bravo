@@ -29,7 +29,7 @@ public class HumanPlayer extends Player {
 			}
 		} while(!inputReady());
 
-		doRandomTurn();
+		getTurn();
 		return true;
 
 	}
@@ -46,6 +46,29 @@ public class HumanPlayer extends Player {
 			}
 		}
 		game.board.setStateSkel(k.src, k.dst);
+	}
+
+	private void getTurn() {
+		try {
+			byte[] in = new byte[8192];
+			System.err.print("enter the move: ");
+			int s = System.in.read(in);
+			int srcy = Byte.parseByte(new String(in, 0, 1), 16);
+			int srcx = Byte.parseByte(new String(in, 1, 1), 16);
+			int dsty = Byte.parseByte(new String(in, 3, 1), 16);
+			int dstx = Byte.parseByte(new String(in, 4, 1), 16);
+			game.board.setStateSkel((byte)(srcy<<4|srcx), (byte)(dsty<<4|dstx));
+		} catch (java.io.IOException e) {
+			System.out.println("IO Error");
+			try {
+				Thread.sleep(4000);
+			} catch (InterruptedException f) {
+				f.printStackTrace();
+			}
+		} catch (NumberFormatException e) {
+			System.err.println("Random");
+			doRandomTurn();
+		}
 	}
 
 
