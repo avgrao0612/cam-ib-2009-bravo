@@ -5,6 +5,7 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import bravo.io.Pathing;
 
 // Internal representation of the board at each turn.
 
@@ -32,7 +33,7 @@ public class Board {
 
 	private Piece cell[] = new Piece[256];
 	private boolean who; // next mover
-	private HashSet<Turn> vt;
+	private HashSet<Turn> vt = new HashSet<Turn>();
 
 	// initialise a board
 	public Board() {
@@ -48,28 +49,31 @@ public class Board {
 			cell[white[i]&B] = new Piece(true, !inPlay(white[i]), white[i]);
 		}
 
-		vt = new HashSet<Turn>();
 		setValidTurns();
+		System.err.print(this);
 	}
+
+	private Board(boolean empty) { }
 
 	// returns a Board object of t applied to the current Board
 	public Board nextState(Turn t) {
 		if (!vt.contains(t)) { return null; }
-		Board c = new Board();
+		Board c = new Board(true);
 		c.cell = cell.clone();
 
-		c.cell[t.dst&B] = c.cell[t.src&B];
+		boolean k = c.cell[t.src&B].king;
+		c.cell[t.dst&B] = new Piece(c.who, k, t.dst);
 		c.cell[t.src&B] = null;
 
 		for (byte capt : t.capt) { c.cell[capt&B] = null; }
 
-		if (!cell[t.dst&B].king && c.levelUp(t.dst)) {
+		if (!k && c.levelUp(t.dst)) {
 			c.cell[t.dst&B] = new Piece(c.who, true, t.dst);
 		}
 
 		c.who = !who;
 		c.setValidTurns();
-		return this;
+		return c;
 	}
 
 	// returns the ratio of the current player's pieces to the total
@@ -80,8 +84,8 @@ public class Board {
 			if (p.side) { ++white; } else { ++black; }
 			++total;
 		}
-		// return side? white/total: black/total;
-		return who? white/total: black/total;
+		// return side? (double)white/total: (double)black/total;
+		return who? (double)white/total: (double)black/total;
 	}
 
 	// prints ASCII graphic of the cell
@@ -151,6 +155,7 @@ public class Board {
 		}
 		out.append("  8   0   1   2   3   4   5   6   7   9 x\\y\n");
 		//out.append(" 14  12  10   8   0   1   2   3   4   5   6   7   9  11  13  15  x\\y\n");
+		//out.append(piecesRatio() + "\n");
 		out.append((who)?"white to move\n":"black to move\n");
 
 		return out.toString();
@@ -377,8 +382,6 @@ public class Board {
 			}
 		}
 
-		System.out.print(this);
-		//System.out.println("avail moves:"); for (Turn t : vt) { System.out.println(t); }
 		return this;
 	}
 
@@ -644,19 +647,32 @@ public class Board {
 	// TODO SPEC: maybe have this throw an exception / warning lights instead
 	private Board restoreBoardState() {
 		System.out.println("got here, the reset part");
+		try {
+			byte[] n = new byte[8192]; System.in.read(n);
+		} catch (java.io.IOException e) {
+			System.out.println("IO Error");
+			try {
+				Thread.sleep(4000);
+			} catch (InterruptedException f) {
+				f.printStackTrace();
+			}
+		}
+		System.exit(2);
 		// restore previous board state
 		return this;
 	}
 
 	// executes pending changes
 	private Board updateBoard(PendingChanges pc) {
-		//System.out.println(pc.turn);
+		System.err.println(pc.turn);
 		assert(vt.contains(pc.turn));
 
 		pc.execute();
 
 		who = !who;
 		setValidTurns();
+		System.err.print(this);
+		//System.out.println("avail moves:"); for (Turn t : vt) { System.out.println(t); }
 		return this;
 	}
 

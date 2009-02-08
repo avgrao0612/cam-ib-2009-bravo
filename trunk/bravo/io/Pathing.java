@@ -1,9 +1,11 @@
 //Pathing is responsible for taking a series of Moves and calculating the best way to
 //move the head from one square to another in order to drag a piece to its destination
 //quickly and undisturbed.
-package bravo.game;
+package bravo.io;
 
+import bravo.game.Move;
 import java.util.Vector;
+
 public class Pathing
 {
 /*Coordinate system of boardStatus:
