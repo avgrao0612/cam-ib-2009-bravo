@@ -45,7 +45,7 @@ public class Draughts {
 		double pi = (args.length < 1)? 1: Double.parseDouble(args[0]);
 		int tough = (args.length < 2)? 5: Integer.parseInt(args[1]);
 		//Draughts game = new Draughts(new HumanPlayer(pi), new AIPlayer(pi));
-		Draughts game = new Draughts(new HumanPlayer(pi), new AIPlayer(pi, tough));
+		Draughts game = new Draughts(new AIPlayer(pi, tough), new HumanPlayer(pi));
 		game.play();
 
 	}
