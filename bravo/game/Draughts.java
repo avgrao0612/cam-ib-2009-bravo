@@ -49,9 +49,9 @@ public class Draughts {
 			game.play();
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			//e.printStackTrace();
 			System.err.println("Usage: Draughts [black] [white]");
-			System.err.println("H means a human player; a number means an AI player with that toughness (pecommended 7).");
+			System.err.println("H means a human player; a number means an AI player with that toughness (recommended 7).");
 			System.exit(2);
 		}
 
