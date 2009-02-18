@@ -14,34 +14,33 @@ To sample the data, a side will sample the incoming stream on a wire at 8 or 16 
 
 === Java to Verilog ===
 
-  * 00 XXX XXX Motor control
-    * 00 XXX 000 move in Direction
+  * 00 XXX XXX (M)otor control
+    * 00 XXX 000 move in (D)irection
       * This requires an argument of the compass direction (1-8). This can be encoded with 3 bits, 000-111, a good convention would be for 000 to be N and then count up clockwise to 111 being NW. The 3 bits can be the 3rd-5th bits, leaving 3 left if required.
-    * 00 111 111 Reset to (0,0)
-  * 01 X00 000 maGnet control
-  * 10 XXX XXX misc game Actions
-    * 10 111 111 Scan
-    * 10 000 0XX game Over
-      * 10 000 001 Black wins
-      * 10 000 010 White wins
-      * 10 000 011 Draw
-  * 11 XXX XXX reQuest human response
+    * 00 111 111 (R)eset to (0,0)
+  * 01 X00 000 ma(G)net control
+  * 10 XXX XXX misc game (A)ctions
+    * 10 111 111 (S)can
+    * 10 000 0XX game (O)ver
+      * 10 000 001 (B)lack wins
+      * 10 000 010 (W)hite wins
+      * 10 000 011 (D)raw
+  * 11 XXX XXX re(Q)uest human response
     * 11 000 000 : normal wait
     * 11 000 001 : player must jump; wait for player to fix
     * 11 000 010 : more jumps available in sequence; wait for player to fix
     * 11 111 111 : unrecoverable error; wait for player to fix
 
 === Verilog to Java ===
-There are 4 signals or data returns the Verilog needs to send to Java, these can be encoded again using only 2 bits. Using the first 2 bits (2 MSB) as follows: 00 signal end of user’s turn, 01 signal the end of the computer’s current movement, 10 sending data of a scan, 11 sending the position of the magnet head
 
-  * 00 XXX 000 human Response
-    * 00 000 000 : Turn done (implies decline draw)
-    * 00 010 000 : offer Draw, or accept draw
-    * 00 100 000 : rEsign
-  * 01 000 000 Movement complete
-  * 10 XYY YYY Scan data (X left/right side bit, Y scanned data)
+  * 00 XXX 000 human (R)esponse
+    * 00 000 000 : (T)urn done (implies decline draw)
+    * 00 010 000 : offer (D)raw, or accept draw
+    * 00 100 000 : r(E)sign
+  * 01 000 000 (M)ovement complete
+  * 10 XYY YYY (S)can data (X left/right side bit, Y scanned data)
     * Scanning a row of data returns 10 bits, 1 for each square on a row of the board (8 live and 2 dead). Setting a bit to 1 for a piece and 0 for empty. The problem is a signal stream only sends a byte (8 bits), therefore multiple streams are needed. A way to do this would be to have a bit to tell if the stream is for the 1st half or the 2nd half then 5 bits to encode that half of the row. So having the 3rd bit can be set to 1 for the left side and 0 for the right side, then the 4th-8th bit being the 5 scanned bits
-  * 11 XXX YYY New game (X black, Y white)
+  * 11 XXX YYY (N)ew game (X black, Y white)
     * 000 human
     * 001 AI:easy
     * 010 AI:standard
@@ -51,28 +50,33 @@ There are 4 signals or data returns the Verilog needs to send to Java, these can
 
 overview of send/recv algorithm
 
-"send" means Java to Verilog
-"recv" means Verilog to Java
+  * "send" means Java to Verilog.
+  * "recv" means Verilog to Java. all recvs are BLOCKING.
 
 === HumanPlayer's turn ===
 
 (some of these actions will actually be carried out by the Board class)
 
-  * send signal [11] to hardware expecting player input
-  * BLOCK until recv signal [00] "turn type" (normal, draw, resign)
-  * return false if resigning, or both player have chosen "draw"
+    * send Q=11000000 (request response)
   * loop
-    * send signal [10] to hardware to scan the board
-    * BLOCK until recv data [10] from hardware
-    * if valid, break
-    * else, send signal [11] to hardware indicate error condition
-    * BLOCK until recv signal [00] saying error condition has been corrected
-  * for all moves to be done
-    * send signals [00],[01] to move piece
-    * BLOCK until recv signal [01] that move is succesful
+    * recv R "turn type" (normal, draw, resign)
+    * if game has ended in draw or resign, send O and end game
+    * send S (scan)
+    * recv S (scan data)
+    * if board is valid, break
+    * else, send Q indicating error condition
+  * for any additional moves to be done
+    * send G=on
+    * send M (move)
+    * recv M (move successful)
+    * repeat above two as necessary
+    * send G=off
 
 === AIPlayer's turn ===
 
   * for all moves to be done
-    * send signals [00], [01] to move piece
-    * BLOCK until recv signal [01] that move is succesful
+    * send G=on
+    * send M (move)
+    * recv M (move successful)
+    * repeat above two as necessary
+    * send G=off
