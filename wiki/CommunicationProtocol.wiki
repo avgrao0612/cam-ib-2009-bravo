@@ -53,7 +53,7 @@ overview of send/recv algorithm
   * "send" means Java to Verilog.
   * "recv" means Verilog to Java. all recvs are BLOCKING.
 
-=== HumanPlayer's turn ===
+=== HumanPlayer ===
 
 (some of these actions will actually be carried out by the Board class)
 
@@ -72,7 +72,9 @@ overview of send/recv algorithm
     * repeat above two as necessary
     * send G=off
 
-=== AIPlayer's turn ===
+=== AIPlayer ===
+
+(some of these actions will actually be carried out by the Board class)
 
   * for all moves to be done
     * send G=on
