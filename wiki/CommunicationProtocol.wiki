@@ -57,7 +57,7 @@ overview of send/recv algorithm
 
 (some of these actions will actually be carried out by the Board class)
 
-    * send Q=11000000 (request response)
+  * send Q=11000000 (request response)
   * loop
     * recv R "turn type" (normal, draw, resign)
     * if game has ended in draw or resign, send O and end game
