@@ -13,9 +13,19 @@ import java.io.*;
 public class HWInterface
 {
      private final byte[] DIRECTION={0x38,0x00,0x08,0x10,0x18,0x20,0x28,0x30};
-     private final byte SCANREQUEST=(byte)0x80,MAGNETON=0x60,MAGNETOFF=0x40,VALIDBOARD=0x60;
-     private final byte ACKNOWLEDGEMENT=0x40,ENDOFPLAYER=0x00,
-                        RESIGN=0x20,ERRORSIGNAL=(byte)0xff;
+     private final byte RESET=0x3f;
+     private final byte MAGNET_ON=0x60,MAGNET_OFF=0x40;
+     private final byte SCAN_REQUEST=(byte)0xbf,BLACK_TURN=(byte)0xb9,WHITE_TURN=(byte)0xba;
+     private final byte BLACK_WIN=(byte)0x81,WHITE_WIN=(byte)0x82,DRAW=(byte)0x83;
+     private final byte NORMAL=(byte)0xc0,JUMP=(byte)0xc1,MORE_JUMPS=(byte)0xc2,ERROR=(byte)0xff;
+//All the signals sent from Java to Verilog
+
+     private final byte CONTINUE=0x00,WISH_TO_DRAW=0x10,RESIGN=0x20;
+     private final byte ACKNOWLEDGEMENT=(byte)0x40;
+     private final byte START_OPTION_CHECKER=(byte)0xc0;
+     private final byte ROW_ALINEMENT_CHECKER=(byte)0x80;
+     private final byte POSITION_CHECKER=0x20;
+//Some of the signals received from Verilog to Java
 
      private InputStream is;
      private OutputStream os;
@@ -38,105 +48,74 @@ public class HWInterface
      }
 //The name of the serial port needs to be identified before run this code.
 
-     public void moveHead(int direction)
-     {
-         byte[] data=new byte[1];
-         try
-         {
-             data[0]=DIRECTION[direction-1];
-             os.write(data);
-         }
-         catch(IOException e)
-         {
-             System.out.print("Moving error has occured: ");
-             System.err.println(e);
-         }
-         try
-         {
-             byte acknowledgement;
-             while(true)
-             {
-                 acknowledgement=(byte)is.read(data);
-                 if(acknowledgement==ACKNOWLEDGEMENT) break;
-//Any other signals received will be discarded apart from ACKNOWLEDGEMENT.
-             }
 
-         }
-         catch(Exception e)
-         {
-             System.out.print("Acknowledgement receiving error has occured: ");
-             System.err.println(e);
-         }
-     }
-//
-
-     public void magnetOn()
+     public int gameStart()
      {
-         try
-         {
-             byte[] data={MAGNETON};
-             os.write(data);
-         }
-         catch(IOException e)
-         {
-             System.out.print("Magnet powering up error has occured: ");
-             System.err.println(e);
-         }
+         int gameOption=receive("gameStart",START_OPTION_CHECKER);
+//It waits a input signal from DE2 board to indicate the game option
+         gameOption&=0x3f;
+         return gameOption;
      }
-// Turn the electromagnet on
+/*The ourput of gameStart with different game options:
+ *                 Human     Easy comouter     Normal computer     Hard computer        White player
+ * Human             0             1                 2                  4
+ * Easy computer     8             9                 10                 12
+ * Normal computer   16            17                18                 20
+ * Hard computer     32            33                34                 36
+ *
+ *  Black player
+*/
 
-     public void magnetOff()
+     public int nextRound(boolean player, int option)
      {
-         try
+         byte side=player?BLACK_TURN:WHITE_TURN;
+         transmit("nextRound",side);
+         int playerResponse=-1;
+         switch(option)
          {
-             byte[] data={MAGNETOFF};
-             os.write(data);
+             case 0:playerResponse=receive("nextRound",(byte)0);break;
+             case 1:transmit("nextRound",BLACK_WIN); return 3;
+             case 2:transmit("nextRound",WHITE_WIN); return 3;
+             case 3:transmit("nextRound",DRAW); byte[] acceptance={CONTINUE,WISH_TO_DRAW};
+                    playerResponse=receive("nextRound",acceptance); break;
          }
-         catch(IOException e)
+//0=continue as usual; 1=player has been offered to draw; 2=player's opponent has resigned; 3=game over
+         switch(playerResponse)
          {
-             System.out.print("Magnet powering down error has occured: ");
-             System.err.println(e);
+             case CONTINUE: return 0;
+             case WISH_TO_DRAW: return 1;
+             case RESIGN: return 2;
+             default:  return playerResponse;
          }
+//-1=something wrong has happened
      }
-// Turn the electromagnet off
 
      public boolean[] scan()
      {
-         try
-         {
-             byte[] data={SCANREQUEST};
-             os.write(data);
-         }
-         catch(IOException e)
-         {
-             System.out.print("Scanning error has occured: ");
-             System.err.println(e);
-         }
+         reset();
+         transmit("scan",SCAN_REQUEST);
          byte[] rowState=new byte[20];
-         int successful=-1;
-         try
+         int byteNumber=0;
+         while(byteNumber<20)
          {
-             successful=is.read(rowState);
-             if(successful<0) return null;
-         }
-         catch(Exception e)
-         {
-             System.out.print("Board state receiving error has occured: ");
-             System.err.println(e);
+             int rowAlinement=receive("scan",ROW_ALINEMENT_CHECKER);
+             if(rowAlinement==-1) continue;
+             rowState[byteNumber]=(byte)rowAlinement;
+             byteNumber++;
          }
          int[][] board=new int[10][10];
          for(int i=0;i<rowState.length;i++)
          {
              int rowNumber=i/2;
              byte rowAlinement=rowState[i];
-             if(i%2==1)
+             if((rowAlinement&POSITION_CHECKER)==POSITION_CHECKER)
              {
                  for(int j=4;j>=0;j--)
                  {
                      board[rowNumber][j]=rowAlinement%2;
                      rowAlinement/=2;
                  }
-
+//Left half of the row alinement.
              }
              else
              {
@@ -147,7 +126,7 @@ public class HWInterface
                  }
              }
          }
-
+//Right half of the row alinement.
          boolean[] boardState=new boolean[256];
          for(int i=0;i<board.length;i++)
              for(int j=0;j<board[i].length;j++)
@@ -157,38 +136,51 @@ public class HWInterface
              }
          return boardState;
      }
+//Calling scan returns the current board state.
 
-     public byte playerTurn()
+     public int proceed(int situation)
      {
-         try
+         int playerResponse=-1;
+         switch(situation)
          {
-             byte[] data={ENDOFCOMPUTER};
-             os.write(data);
+             case 1: transmit("proceed",JUMP);playerResponse=receive("proceed",(byte)0);break;
+             case 2: transmit("proceed",MORE_JUMPS);playerResponse=receive("proceed",(byte)0);break;
+             case 3: transmit("proceed",ERROR);playerResponse=receive("proceed",(byte)0);break;
+             default: transmit("proceed",NORMAL);return 3;
          }
-         catch(IOException e)
+//3 is returned if the game can proceed normally, otherwise player must fix the board first.
+         switch(playerResponse)
          {
-             System.out.print("Error signal sent by computer after its turn: ");
-             System.err.println(e);
+             case CONTINUE: return 0;
+             case WISH_TO_DRAW: return 1;
+             case RESIGN: return 2;
+             default:  return playerResponse;
          }
-//Notify the DE2 board that the computer has finished its turn so the player can start.
-         byte playerOperation=ERRORSIGNAL;
-         try
-         {
-             byte[] data=new byte[1];
-             while(true)
-             {
-                 playerOperation=(byte)is.read(data);
-                 if(playerOperation==RESIGN||playerOperation==ENDOFPLAYER) break;
-//Any other signals received will be discarded apart from RESIGN and ENDOFPLAYER.
-             }
-         }
-         catch(Exception e)
-         {
-             System.out.print("Acknowledgement receiving error has occured: ");
-             System.err.println(e);
-         }
-         return playerOperation;
      }
+//This method is called to indicate the situation of the game. It requires the board to be fixed
+//before carrying on to play, and it gives the player a second chance to think about their action.
+
+     public void moveHead(int direction)
+     {
+         transmit("moveHead",DIRECTION[direction-1]);
+//Transmit th emoving order.
+         receive("moveHead",ACKNOWLEDGEMENT);
+//The method will be blocked until an acknowledge is received.
+     }
+//Move the electromagnet head to a neighbouring square in the direction specified.
+
+     public void magnetSwitch(boolean power)
+     {
+         byte magnetState=power?MAGNET_ON:MAGNET_OFF;
+         transmit("magnetSwitch",magnetState);
+     }
+//Switch on/off the electromagnet head.
+
+     public void reset()
+     {
+         transmit("reset",RESET);
+     }
+//Reset the magnetic head back to the starting position. Should not be called directly.
 
      private byte squareNumber(int x, int y)
      {
@@ -200,8 +192,9 @@ public class HWInterface
          else s+=(y==0)?(byte)8:9;
          return s;
      }
+//Map the coordinate system used in Pathing to the system used in Board.
 
-     private void transmit(byte signal, String method)
+     private void transmit(String method, byte signal)
      {
          byte[] data=new byte[1];
          data[0]=signal;
@@ -211,44 +204,58 @@ public class HWInterface
          }
          catch(Exception e)
          {
-             System.out.print("Error at "+method+" : ");
+             System.out.print("Error for transmitting at "+method+" : ");
              System.err.println(e);
          }
      }
+//This method is called to transmit one byte at a time.
 
-     private byte[] receive(int byteNumber, String method,byte[] validSignal)
+     private int receive(String method, byte[] validSignal)
      {
-         byte[] data=new byte[byteNumber];
-         int isSignalOK=-1;
          try
          {
-             Outter:while(true)
+             byte[] data=new byte[1];
+             while(true)
              {
-                 isSignalOK=is.read(data);
-                 if(isSignalOK<0) return null;
+                 int byteNumber=is.read(data);
+                 if (byteNumber<1) continue;
                  for(int i=0;i<validSignal.length;i++)
-                     if(data[0]==validSignal[i]) break Outter;
-//Any other signals received will be discarded apart from RESIGN and ENDOFPLAYER.
+                    if(data[0]==validSignal[i]) return data[0];
              }
          }
          catch(Exception e)
          {
-             System.out.print("Error at "+method+" : ");
+             System.out.print("Error for receiving at "+method+" : ");
              System.err.println(e);
+             return -1;
          }
-         return null;
      }
-     private boolean validityCheck(int[][] board)
+//This method is called to receive a signal. Only the signals that are member of
+//validSignal will be accepted so the method will not return until one of them is
+//is received. Return -1 if something wrong has happened.
+     
+     private int receive(String method, byte signalType)
      {
-         int pieceNumber=0;
-         for(int i=0;i<board.length;i++)
-             for(int j=0;j<board[i].length;j++)
+         try
+         {
+             byte[] data=new byte[1];
+             byte checker=(byte)0xc0;
+             while(true)
              {
-                 if(i>0&&i<9&&j>0&&j<9&&(i+j)%2==0&&board[i][j]!=0) return false;
-                 if(board[i][j]!=0) pieceNumber++;
+                 int byteNumber=is.read(data);
+                 if (byteNumber<1) continue;
+                 if((data[0]&checker^signalType)==0) return data[0];
              }
-         if(pieceNumber!=36) return false;
-         return true;
+         }
+         catch(Exception e)
+         {
+             System.out.print("Error for receiving at "+method+" : ");
+             System.err.println(e);
+             return -1;
+         }
      }
+//This method is called to receive a signal. Only the signals that have the required
+//signal format will be accepted so the method will not return until one of them is
+//is received. Return -1 if something wrong has happened.
 }
 
