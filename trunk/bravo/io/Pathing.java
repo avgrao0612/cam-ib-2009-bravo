@@ -36,17 +36,27 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
 
     public void path(Move move)
     {
-        hwi.magnetOff();
         int[] p1=pathWithMagnetOff(move);
         for(int i=0;i<p1.length;i++)
             hwi.moveHead(p1[i]);
-        hwi.magnetOn();
+//Move the magnetic head to the piece to be moved.
+        hwi.magnetSwitch(true);
         int[] p2=pathWithMagnetOn(move);
         for(int i=0;i<p1.length;i++)
             hwi.moveHead(p2[i]);
-        hwi.magnetOff();
+//Drag the piece to its destination.
+        hwi.magnetSwitch(false);
     }
+//The method to be called to invoke a complete move.
 
+    public void reset()
+    {
+        hwi.reset();
+        previousX=0;
+        previousY=0;
+    }
+ //Set the magnetic head back to the starting position.
+    
     private int[] pathWithMagnetOff(Move move)
     {
         int nextX=xcoordinate(move.src);
