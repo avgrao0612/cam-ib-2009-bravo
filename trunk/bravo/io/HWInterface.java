@@ -30,13 +30,13 @@ public class HWInterface
      private InputStream is;
      private OutputStream os;
 
-     public HWInterface(String portName)
+     public HWInterface(String portName,int baudRate)
      {
          try
          {
              CommPortIdentifier cpi=CommPortIdentifier.getPortIdentifier(portName);
-             SerialPort port=(SerialPort)cpi.open(this.getClass().getName(),1000);
-             port.setSerialPortParams(200000,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
+             SerialPort port=(SerialPort)cpi.open("HWInterface",1000);
+             port.setSerialPortParams(baudRate,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
              is=port.getInputStream();
              os=port.getOutputStream();
          }
@@ -164,7 +164,8 @@ public class HWInterface
      {
          transmit("moveHead",DIRECTION[direction-1]);
 //Transmit th emoving order.
-         receive("moveHead",ACKNOWLEDGEMENT);
+         byte[] validData={ACKNOWLEDGEMENT};
+         receive("moveHead",validData);
 //The method will be blocked until an acknowledge is received.
      }
 //Move the electromagnet head to a neighbouring square in the direction specified.
@@ -257,5 +258,11 @@ public class HWInterface
 //This method is called to receive a signal. Only the signals that have the required
 //signal format will be accepted so the method will not return until one of them is
 //is received. Return -1 if something wrong has happened.
+/*     public static void main(String[] args)
+     {
+         HWInterface hwi=new HWInterface("COM4",115200);
+         hwi.magnetSwitch(true);
+         hwi.moveHead(1);
+     }*/
 }
 
