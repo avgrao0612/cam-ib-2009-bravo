@@ -35,7 +35,7 @@ public class HWInterface
          try
          {
              CommPortIdentifier cpi=CommPortIdentifier.getPortIdentifier(portName);
-             SerialPort port=(SerialPort)cpi.open("HWInterface",1000);
+             SerialPort port=(SerialPort)cpi.open(this.getClass().getName(),1000);
              port.setSerialPortParams(baudRate,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
              is=port.getInputStream();
              os=port.getOutputStream();
@@ -258,10 +258,11 @@ public class HWInterface
 //This method is called to receive a signal. Only the signals that have the required
 //signal format will be accepted so the method will not return until one of them is
 //is received. Return -1 if something wrong has happened.
-/*     public static void main(String[] args)
+   /*  public static void main(String[] args)
      {
          HWInterface hwi=new HWInterface("COM4",115200);
-         hwi.magnetSwitch(true);
+         hwi.reset();
+         //hwi.magnetSwitch(true);
          hwi.moveHead(1);
      }*/
 }
