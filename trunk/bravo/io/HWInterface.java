@@ -7,6 +7,8 @@
 
 package bravo.io;
 
+import bravo.game.Draughts.*;
+import bravo.game.Board.*;
 import javax.comm.*;
 import java.io.*;
 
@@ -15,9 +17,10 @@ public class HWInterface
      private final byte[] DIRECTION={0x38,0x00,0x08,0x10,0x18,0x20,0x28,0x30};
      private final byte RESET=0x3f;
      private final byte MAGNET_ON=0x60,MAGNET_OFF=0x40;
-     private final byte SCAN_REQUEST=(byte)0xbf,BLACK_TURN=(byte)0xb9,WHITE_TURN=(byte)0xba;
-     private final byte BLACK_WIN=(byte)0x81,WHITE_WIN=(byte)0x82,DRAW=(byte)0x83;
-     private final byte NORMAL=(byte)0xc0,JUMP=(byte)0xc1,MORE_JUMPS=(byte)0xc2,ERROR=(byte)0xff;
+     private final byte SCAN_REQUEST=(byte)0xbf,BLACK_TURN=(byte)0xa1,WHITE_TURN=(byte)0xa2;
+     //private final byte BLACK_WIN=(byte)0x81,WHITE_WIN=(byte)0x82,DRAW=(byte)0x83;
+     private final byte /*NORMAL=(byte)0xc0,JUMP=(byte)0xc1,MORE_JUMPS=(byte)0xc2,*/ERROR=(byte)0xff;
+     // the commented parts are no longer necessary, since i have added them into Board.java as enums
 //All the signals sent from Java to Verilog
 
      private final byte CONTINUE=0x00,WISH_TO_DRAW=0x10,RESIGN=0x20;
@@ -66,32 +69,23 @@ public class HWInterface
  *  Black player
 */
 
-     public int nextRound(boolean player, int option)
+     public void nextRound(boolean player, GameState gstate)
      {
-         byte side=player?BLACK_TURN:WHITE_TURN;
-         transmit("nextRound",side);
-         int playerResponse=-1;
-         switch(option)
-         {
-             case 0:playerResponse=receive("nextRound",(byte)0);break;
-             case 1:transmit("nextRound",BLACK_WIN); return 3;
-             case 2:transmit("nextRound",WHITE_WIN); return 3;
-             case 3:transmit("nextRound",DRAW); byte[] acceptance={CONTINUE,WISH_TO_DRAW};
-                    playerResponse=receive("nextRound",acceptance); break;
-         }
-//0=continue as usual; 1=player has been offered to draw; 2=player's opponent has resigned; 3=game over
-         switch(playerResponse)
-         {
-             case CONTINUE: return 0;
-             case WISH_TO_DRAW: return 1;
-             case RESIGN: return 2;
-             default:  return playerResponse;
-         }
-//-1=something wrong has happened
+         byte side = player?BLACK_TURN:WHITE_TURN;
+         byte state = (byte)(gstate.ordinal() << 3);
+         transmit("nextRound", (byte)(side|state));
+         // this doesn't need to wait for reply, it's just to tell the hardware the state of the game
+     }
+
+     public void gameOver(EndGame gend)
+     {
+         transmit("gameOver", (byte)(gend.ordinal()|0x80));
+         // this doesn't need to wait for reply, it's just to tell the hardware the state of the game
      }
 
      public boolean[] scan()
      {
+     // TODO: Janus says that at the end of every row data, he is going to send "movement complete"
          reset();
          transmit("scan",SCAN_REQUEST);
          byte[] rowState=new byte[20];
@@ -138,23 +132,16 @@ public class HWInterface
      }
 //Calling scan returns the current board state.
 
-     public int proceed(int situation)
+     public EndTurn proceed(BoardState situation)
      {
-         int playerResponse=-1;
-         switch(situation)
-         {
-             case 1: transmit("proceed",JUMP);playerResponse=receive("proceed",(byte)0);break;
-             case 2: transmit("proceed",MORE_JUMPS);playerResponse=receive("proceed",(byte)0);break;
-             case 3: transmit("proceed",ERROR);playerResponse=receive("proceed",(byte)0);break;
-             default: transmit("proceed",NORMAL);return 3;
-         }
-//3 is returned if the game can proceed normally, otherwise player must fix the board first.
+         transmit("proceed", (byte)(situation.ordinal()>3?ERROR:situation.ordinal()|0xC0));
+         int playerResponse=receive("proceed",(byte)0);
+//player must play a move, or fix the board first.
          switch(playerResponse)
          {
-             case CONTINUE: return 0;
-             case WISH_TO_DRAW: return 1;
-             case RESIGN: return 2;
-             default:  return playerResponse;
+             default: case CONTINUE: return EndTurn.NORMAL;
+             case WISH_TO_DRAW: return EndTurn.DRAW;
+             case RESIGN: return EndTurn.RESIGN;
          }
      }
 //This method is called to indicate the situation of the game. It requires the board to be fixed

@@ -9,6 +9,8 @@
 
 package bravo.game;
 
+import bravo.game.Draughts.*;
+
 public class AIPlayer extends Player{
 
 	public AIPlayer(int t) {
@@ -64,16 +66,21 @@ public class AIPlayer extends Player{
 		//}
 	}
 
-	public boolean doTurn(){
+	public EndTurn doTurn(GameState state){
+		switch (state) {
+		case NORMAL:
+			Turn bestTurn = bestTree(game.board, tough);
+			System.err.println("");
 
-		Turn bestTurn = bestTree(game.board, tough);
-		System.err.println("");
+			if (bestTurn != null){
+				boolean[] skel = game.board.getStateSkel(bestTurn.src, bestTurn.dst);
+				//++turns;
+			}
+			return EndTurn.NORMAL; // TODO: find better draw conditions
 
-		if (bestTurn != null){
-			game.board.setStateSkel(bestTurn.src, bestTurn.dst);
-			//++turns;
+		case DRAWOFFER:
+			return EndTurn.NORMAL; // TODO: find better draw conditions
 		}
-		return true;
 	}
 
 }
