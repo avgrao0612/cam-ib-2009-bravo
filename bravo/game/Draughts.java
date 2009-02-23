@@ -3,6 +3,7 @@ package bravo.game;
 // A class which deals with the turn logic. Also runnable as a standalone program
 
 import bravo.io.HWInterface;
+import bravo.game.Board.*;
 
 public class Draughts {
 
@@ -17,6 +18,7 @@ public class Draughts {
 	private Player black;
 	private Player white;
 	GameState state;
+	BoardState bstate;
 
 	private Turn[] history; // TODO to be implemented
 
@@ -26,6 +28,7 @@ public class Draughts {
 		hwi = h;
 		board = new Board(h);
 		state = GameState.NORMAL;
+		bstate = BoardState.NORMAL;
 	}
 
 	public EndGame play() {
@@ -34,7 +37,7 @@ public class Draughts {
 			switch(nextTurn()) {
 			case NORMAL:
 				if (state == GameState.NORMAL) {
-					//board.applyBoardState();
+					bstate = board.applyBoardState(hwi.scan());
 				} else {
 					state = GameState.NORMAL;
 				}
@@ -54,7 +57,7 @@ public class Draughts {
 	}
 
 	private EndTurn nextTurn() {
-		return board.who()? white.doTurn(state): black.doTurn(state);
+		return board.who()? white.doTurn(state, bstate): black.doTurn(state, bstate);
 	}
 
 	private Draughts handleWinner(EndGame end) {
@@ -75,6 +78,7 @@ public class Draughts {
 			Player b = (args[0].equals("H"))? new HumanPlayer(): new AIPlayer(Integer.parseInt(args[0]));
 			Player w = (args[1].equals("H"))? new HumanPlayer(): new AIPlayer(Integer.parseInt(args[1]));
 			Draughts game = new Draughts(h, b, w);
+			((DummyHWInterface)h).setGame(game);
 			game.handleWinner(game.play());
 
 		} catch (Exception e) {
@@ -122,20 +126,68 @@ public class Draughts {
 	
 	public static class DummyHWInterface extends HWInterface {
 	
-	public DummyHWInterface(String s, int b) { super(s,b); }
-	
-	public void gameOver(EndGame g) {
-		switch (g) {
-		case BLACK: System.out.println("black wins"); return;
-		case WHITE: System.out.println("white wins"); return;
-		case DRAW: System.out.println("draw"); return;
+		public DummyHWInterface(String s, int b) { super(s,b); }
+		
+		Draughts game;
+		public void setGame(Draughts g) { game = g; }
+		
+		public void gameOver(EndGame g) {
+			switch (g) {
+			case BLACK: System.out.println("black wins"); return;
+			case WHITE: System.out.println("white wins"); return;
+			case DRAW: System.out.println("draw"); return;
+			}
 		}
-	}
-	
-	private void transmit(String method, byte signal) { }
-	private int receive(String method, byte[] validSignal) { return 0; }
-	private int receive(String method, byte signalType) { return 0; }
-	
+		
+		private boolean[] skel;
+		public void setDummyState(boolean[] s) { skel = s; }
+		public boolean[] scan() { return skel; }
+		
+		private void transmit(String method, byte signal) { }
+		private int receive(String method, byte[] validSignal) { return 0; }
+		private int receive(String method, byte signalType) { return 0; }
+		
+		public EndTurn proceed(BoardState bstate) {
+			boolean[] skel;
+			try {
+				byte[] in = new byte[8192];
+				System.err.print("enter the move, or nothing for random: ");
+				int s = System.in.read(in);
+				int srcy = Byte.parseByte(new String(in, 0, 1), 16);
+				int srcx = Byte.parseByte(new String(in, 1, 1), 16);
+				int dsty = Byte.parseByte(new String(in, 3, 1), 16);
+				int dstx = Byte.parseByte(new String(in, 4, 1), 16);
+				skel = game.board.getStateSkel((byte)(srcy<<4|srcx), (byte)(dsty<<4|dstx));
+			} catch (java.io.IOException e) {
+				skel = doRandomTurn();
+			} catch (NumberFormatException e) {
+				skel = doRandomTurn();
+			}
+			((DummyHWInterface)game.hwi).setDummyState(skel);
+			
+			return EndTurn.NORMAL;
+		}
+
+		public void reset() {
+			((DummyHWInterface)game.hwi).setDummyState(game.board.getStateSkel());
+		}
+
+		java.util.Random rdx = new java.util.Random();
+		private boolean[] doRandomTurn() {
+			// pick a random turn
+			Turn k = null;
+			int s = rdx.nextInt(game.board.getValidTurns().size());
+			int i = 0;
+			for (Turn t : game.board.getValidTurns()) {
+				if (i++ == s) {
+					k = t; break;
+				}
+			}
+			return game.board.getStateSkel(k.src, k.dst);
+		}
+
+
+		
 	}
 
 }
