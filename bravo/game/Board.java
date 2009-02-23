@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import bravo.io.Pathing;
+import bravo.io.HWInterface;
 
 // Internal representation of the board at each turn.
 
@@ -14,6 +15,8 @@ import bravo.io.Pathing;
 // known arrays which this applies to: cell[], skel[], chg[]
 
 public class Board {
+
+	public enum BoardState { NORMAL, JUMP, MORE_JUMPS, U_3, ERR_NO_KINGS_LEFT, ERR_NO_FREE_RESERVES, U_6, ERR_MISC }
 
 	final static byte OUT_X = 0x08;
 	final static byte OUT_Y = -0x80; // 0x80
@@ -393,22 +396,19 @@ public class Board {
 	 * Validate state-skeleton
 	 *************************************************************************/
 
-	private boolean[] getStateSkel() {
-		// TODO SPEC: get actual user input
-		return skel;
-	}
-
-	private boolean[] skel;
-	//REMOVE THIS SHIT LATER
-	public void setStateSkel(byte src, byte dst) {
-		skel = new boolean[256];
+	public boolean[] getStateSkel() {
+		boolean[] skel = new boolean[256];
 		// turn current state into skeleton
 		for (Piece p : cell) {
 			if (p!=null) { skel[p.pos&B] = true; }
 		}
-		// apply new skeleton
+		return skel;
+	}
+	public boolean[] getStateSkel(byte src, byte dst) {
+		boolean[] skel = getStateSkel();
 		skel[src&B] = false;
 		skel[dst&B] = true;
+		return skel;
 	}
 
 	// returns the changes between the current state and s
@@ -512,7 +512,7 @@ public class Board {
 				try {
 					kdst = cell[capt&B].king? fres[1][frEKi++]: fres[0][frENi++];
 				} catch (ArrayIndexOutOfBoundsException e) {
-					throw new NoFreeReserveCellsLeftException(e);
+					throw new BoardStateError(BoardState.ERR_NO_FREE_RESERVES, e);
 				}
 
 				capture = new Move(capt, kdst);
@@ -554,7 +554,7 @@ public class Board {
 				try {
 					ksrc = kres[0];
 				} catch (ArrayIndexOutOfBoundsException e) {
-					throw new NoKingsLeftException(e);
+					throw new BoardStateError(BoardState.ERR_NO_KINGS_LEFT, e);
 				}
 
 				nrmoff = new Move(t.dst, kdst);
@@ -600,8 +600,8 @@ public class Board {
 	// validate a skeleton state against all possible turns
 	// if mutiple turns are valid for the same state, then pick the one
 	// which requires the least changes
-	private PendingChanges getPendingChanges(boolean[] state) {
-		byte[] chg = getStateSkelChanges(state);
+	private PendingChanges getPendingChanges(boolean[] skel) {
+		byte[] chg = getStateSkelChanges(skel);
 		int[] high = new int[]{Integer.MAX_VALUE};
 
 		byte[][] fres = new byte[][]{
@@ -618,7 +618,7 @@ public class Board {
 			p = validateAndPlan(t, chg, fres, high);
 			if (p != null) { pc = p; }
 		}
-
+		throw new BoardStateError(BoardState.JUMP);
 		return pc;
 	}
 
@@ -627,12 +627,14 @@ public class Board {
 	 * Execute turn
 	 *************************************************************************/
 
-	public Board applyBoardState() {
-		PendingChanges pc = getPendingChanges(getStateSkel());
-		if (pc == null) { return restoreBoardState(); }
-		updateBoard(pc);
-
-		return this;
+	public BoardState applyBoardState(boolean[] skel) {
+		try {
+			PendingChanges pc = getPendingChanges(skel);
+			updateBoard(pc);
+			return BoardState.NORMAL;
+		} catch (BoardStateError b) {
+			return b.boardState;
+		}
 	}
 
 	// TODO SPEC: maybe have this throw an exception / warning lights instead
@@ -690,6 +692,7 @@ public class Board {
 
 		public void execute() {
 
+			//Pathing.reset();
 			for (Move p : phys) {
 				// TODO SPEC: Pathing.execute(p);
 			}
@@ -703,12 +706,10 @@ public class Board {
 		}
 	}
 
-	private class NoKingsLeftException extends java.lang.RuntimeException {
-		public NoKingsLeftException(Throwable e) { super(e); }
-	}
-
-	private class NoFreeReserveCellsLeftException extends java.lang.RuntimeException {
-		public NoFreeReserveCellsLeftException(Throwable e) { super(e); }
+	private class BoardStateError extends java.lang.RuntimeException {
+		public BoardState boardState;
+		public BoardStateError(BoardState b, Throwable e) { super(e); boardState = b; }
+		public BoardStateError(BoardState b) { boardState = b; }
 	}
 
 }

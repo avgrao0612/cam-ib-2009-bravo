@@ -1,5 +1,7 @@
 package bravo.game;
 
+import bravo.game.Draughts.*;
+
 public abstract class Player {
 
 	protected Draughts game;
@@ -11,7 +13,6 @@ public abstract class Player {
 		return this;
 	}
 
-	// if the player resigns, this returns false
-	public abstract boolean doTurn();
+	public abstract EndTurn doTurn(GameState s);
 
 }
