@@ -1,6 +1,7 @@
 package bravo.game;
 
 import bravo.game.Draughts.*;
+import bravo.game.Board.*;
 
 public abstract class Player {
 
@@ -13,6 +14,6 @@ public abstract class Player {
 		return this;
 	}
 
-	public abstract EndTurn doTurn(GameState s);
+	public abstract EndTurn doTurn(GameState s, BoardState bs);
 
 }

@@ -10,6 +10,7 @@
 package bravo.game;
 
 import bravo.game.Draughts.*;
+import bravo.game.Board.*;
 
 public class AIPlayer extends Player{
 
@@ -43,6 +44,7 @@ public class AIPlayer extends Player{
 		//return null;
 		//}
 		//else{
+		// TODO: if scores are even, make it pick a random one
 		Turn turn = null;
 		double lowest = 1.0;
 
@@ -64,15 +66,13 @@ public class AIPlayer extends Player{
 		//}
 	}
 
-	public EndTurn doTurn(GameState state){
+	public EndTurn doTurn(GameState state, BoardState bstate){
 		switch (state) {
 		default: case NORMAL:
 			Turn bestTurn = bestTree(game.board, tough);
 			System.err.println("");
 
-			// TODO: make it actually move
-			boolean[] skel = game.board.getStateSkel(bestTurn.src, bestTurn.dst);
-			game.board.applyBoardState(skel);
+			game.board.applyBoardState(bestTurn);
 			return EndTurn.NORMAL; // TODO: find better draw conditions
 
 		case DRAWOFFER:

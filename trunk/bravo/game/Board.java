@@ -447,6 +447,7 @@ public class Board {
 	/* validates a list of changes against a Turn t, and
 	** plans the moves needed to put board into a valid state
 	** t is ASSUMED to be a valid turn
+	** if highest is a NULL pointer, assumes Turn is valid and executes it
 
 	** KEY:
 	** rem-live: live squares from which a piece has been removed
@@ -492,13 +493,17 @@ public class Board {
 
 		byte f, ksrc, kdst; // placeholder for any flag, src, dst, needed
 
-		// match Turn t to changes made to the physical board
-		if ((f = chg[t.dst&B]) == NONE || (f & 0x0C) != 0x0C) { return null; }
-		chgm[f].remove(t.dst);
-		if ((f = chg[t.src&B]) == NONE || (f & 0x0C) != 0x04) { return null; }
-		chgm[f].remove(t.src);
-
-		virt.add(new Move(t.src, t.dst));
+		Move theMove = new Move(t.src, t.dst);
+		if (highest == null) {
+			phys.add(theMove);
+		} else {
+			// match Turn t to changes made to the physical board
+			if ((f = chg[t.dst&B]) == NONE || (f & 0x0C) != 0x0C) { return null; }
+			chgm[f].remove(t.dst);
+			if ((f = chg[t.src&B]) == NONE || (f & 0x0C) != 0x04) { return null; }
+			chgm[f].remove(t.src);
+		}
+		virt.add(theMove);
 
 		// indexs for the free reserves array
 		// fres[0]: enemy normal; fres[3]: allied king
@@ -533,7 +538,8 @@ public class Board {
 			virt.add(capture);
 		}
 
-		if (notcapt >= highest[0]) { return null; }
+		if (highest == null) { /* don't check */ }
+		else if (notcapt >= highest[0]) { return null; }
 		else { highest[0] = notcapt; }
 
 		if (!cell[t.src&B].king && levelUp(t.dst)) {
@@ -641,6 +647,21 @@ public class Board {
 			return b.boardState;
 		}
 	}
+	
+	public BoardState applyBoardState(Turn t) {
+		byte[] chg = new byte[256];
+		for (int i=0; i<256; ++i) { chg[i] = NONE; }
+		byte[][] fres = new byte[][]{
+			getReserves(false, false, false),
+			getReserves(false, false, true),
+			getReserves(false, true, false),
+			getReserves(false, true, true),
+		};
+		shuffleByteArray(fres[0]); shuffleByteArray(fres[1]);
+		shuffleByteArray(fres[2]); shuffleByteArray(fres[3]);
+		updateBoard(validateAndPlan(t, chg, fres, null));
+		return BoardState.NORMAL;
+	}
 
 	// executes pending changes
 	private Board updateBoard(PendingChanges pc) {
@@ -677,20 +698,13 @@ public class Board {
 		}
 
 		public void execute() {
-
+			for (Move v : virt) { movePiece(v.src, v.dst); }
 			path.reset();
-			for (Move p : phys) {
-				path.path(p);
-			}
-
-			for (Move v : virt) {
-				movePiece(v.src, v.dst);
-			}
-
+			for (Move p : phys) { path.path(p); }
 		}
 	}
 
-	private class BoardStateError extends java.lang.RuntimeException {
+	private class BoardStateError extends RuntimeException {
 		public BoardState boardState;
 		public BoardStateError(BoardState b, Throwable e) { super(e); boardState = b; }
 		public BoardStateError(BoardState b) { boardState = b; }
