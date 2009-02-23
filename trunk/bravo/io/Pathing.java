@@ -29,7 +29,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
     private int previousX=0;
     private int previousY=0;
 
-    public void setHWInterface(HWInterface hwi)
+    public Pathing(HWInterface hwi)
     {
         this.hwi=hwi;
     }
