@@ -12,18 +12,19 @@ public class Draughts {
 	public enum EndTurn { NORMAL, DRAW, RESIGN }
 	public enum EndGame { NONE, BLACK, WHITE, DRAW }
 
-	static HWInterface hwi;
-
 	Board board;
+	HWInterface hwi;
 	private Player black;
 	private Player white;
 	GameState state;
+
 	private Turn[] history; // TODO to be implemented
 
-	public Draughts(Player b, Player w) {
+	public Draughts(HWInterface h, Player b, Player w) {
 		black = b.sit(this, false);
 		white = w.sit(this, true);
-		board = new Board();
+		hwi = h;
+		board = new Board(h);
 		state = GameState.NORMAL;
 	}
 
@@ -58,8 +59,6 @@ public class Draughts {
 
 	private Draughts handleWinner(EndGame end) {
 		hwi.gameOver(end);
-		// TODO: link to board
-		System.out.println(board.who()?"black wins":"white wins");
 		return this;
 	}
 
@@ -67,24 +66,24 @@ public class Draughts {
 	public static void main(String[] args) {
 		testSuite();
 
-		hwi = new HWInterface("none", 115200);
-		int gameopts = hwi.gameStart();
+		HWInterface h = new DummyHWInterface("none", 115200);
+		int gameopts = h.gameStart();
 
 
-		/*
+		
 		try {
 			Player b = (args[0].equals("H"))? new HumanPlayer(): new AIPlayer(Integer.parseInt(args[0]));
 			Player w = (args[1].equals("H"))? new HumanPlayer(): new AIPlayer(Integer.parseInt(args[1]));
-			Draughts game = new Draughts(b, w);
+			Draughts game = new Draughts(h, b, w);
 			game.handleWinner(game.play());
 
 		} catch (Exception e) {
-			//e.printStackTrace();
+			e.printStackTrace();
 			System.err.println("Usage: Draughts [black] [white]");
 			System.err.println("H means a human player; a number means an AI player with that toughness (recommended 7).");
 			System.exit(2);
 		}
-		*/
+		
 
 	}
 
@@ -119,6 +118,24 @@ public class Draughts {
 		System.out.println(ts.contains(new Turn((byte)0x13, (byte)0x13, new byte[]{0x22, 0x44, 0x42, 0x24})));
 		System.out.println(ts.contains(new Turn((byte)0x13, (byte)0x15, new byte[]{0x24, 0x44, 0x42, 0x22})));
 		*/
+	}
+	
+	public static class DummyHWInterface extends HWInterface {
+	
+	public DummyHWInterface(String s, int b) { super(s,b); }
+	
+	public void gameOver(EndGame g) {
+		switch (g) {
+		case BLACK: System.out.println("black wins"); return;
+		case WHITE: System.out.println("white wins"); return;
+		case DRAW: System.out.println("draw"); return;
+		}
+	}
+	
+	private void transmit(String method, byte signal) { }
+	private int receive(String method, byte[] validSignal) { return 0; }
+	private int receive(String method, byte signalType) { return 0; }
+	
 	}
 
 }

@@ -17,8 +17,6 @@ public class AIPlayer extends Player{
 		tough = t;
 	}
 
-	// initialise variables
-	//private int turns = 0;
 	protected int tough=5;
 
 	protected double scoreForTree(Board b, int depth, String pre){
@@ -68,14 +66,13 @@ public class AIPlayer extends Player{
 
 	public EndTurn doTurn(GameState state){
 		switch (state) {
-		case NORMAL:
+		default: case NORMAL:
 			Turn bestTurn = bestTree(game.board, tough);
 			System.err.println("");
 
-			if (bestTurn != null){
-				boolean[] skel = game.board.getStateSkel(bestTurn.src, bestTurn.dst);
-				//++turns;
-			}
+			// TODO: make it actually move
+			boolean[] skel = game.board.getStateSkel(bestTurn.src, bestTurn.dst);
+			game.board.applyBoardState(skel);
 			return EndTurn.NORMAL; // TODO: find better draw conditions
 
 		case DRAWOFFER:

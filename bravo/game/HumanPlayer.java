@@ -12,17 +12,17 @@ public class HumanPlayer extends Player {
 	public HumanPlayer() { }
 
 	public EndTurn doTurn(GameState state) {
-
+/*
 		BoardState bs = BoardState.NORMAL;
 		EndTurn resp;
 		do {
 			resp = game.hwi.proceed(bs);
 			if (resp != EndTurn.NORMAL) { return resp; }
 			bs = game.board.applyBoardState(game.hwi.scan());
-		} while (bs != BoardState.NORMAL);
+		} while (bs != BoardState.NORMAL);*/
 
-		/*
-		boolean[] = skel;
+		
+		boolean[] skel;
 		try {
 			byte[] in = new byte[8192];
 			System.err.print("enter the move, or nothing for random: ");
@@ -33,15 +33,13 @@ public class HumanPlayer extends Player {
 			int dstx = Byte.parseByte(new String(in, 4, 1), 16);
 			skel = game.board.getStateSkel((byte)(srcy<<4|srcx), (byte)(dsty<<4|dstx));
 		} catch (java.io.IOException e) {
-			System.err.println("IO Error");
-			try {
-				Thread.sleep(4000);
-			} catch (InterruptedException f) {
-				f.printStackTrace();
-			}
+			skel = doRandomTurn();
 		} catch (NumberFormatException e) {
 			skel = doRandomTurn();
-		}*/
+		}
+		game.board.applyBoardState(skel);
+		
+		return EndTurn.NORMAL;
 	}
 
 	Random rdx = new Random();

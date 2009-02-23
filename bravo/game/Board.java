@@ -37,9 +37,12 @@ public class Board {
 	private Piece cell[] = new Piece[256];
 	private boolean who; // next mover
 	private HashSet<Turn> vt = new HashSet<Turn>();
+	private Pathing path;
 
 	// initialise a board
-	public Board() {
+	public Board(HWInterface hwi) {
+		path = new Pathing(hwi);
+
 		// starting pieces
 		byte[] white = {0x77, 0x75, 0x73, 0x71, 0x66, 0x64, 0x62, 0x60, 0x57, 0x55, 0x53, 0x51,
 			-0x7F, -0x7E, -0x7D, -0x7C, -0x7B, -0x7A};
@@ -613,12 +616,14 @@ public class Board {
 		shuffleByteArray(fres[0]); shuffleByteArray(fres[1]);
 		shuffleByteArray(fres[2]); shuffleByteArray(fres[3]);
 
+		// TODO: detect jumps, multijumps
 		PendingChanges pc = null, p = null;
 		for (Turn t : vt) {
 			p = validateAndPlan(t, chg, fres, high);
 			if (p != null) { pc = p; }
 		}
-		throw new BoardStateError(BoardState.JUMP);
+
+		if (pc == null) { throw new BoardStateError(BoardState.ERR_MISC); }
 		return pc;
 	}
 
@@ -635,25 +640,6 @@ public class Board {
 		} catch (BoardStateError b) {
 			return b.boardState;
 		}
-	}
-
-	// TODO SPEC: maybe have this throw an exception / warning lights instead
-	private Board restoreBoardState() {
-		System.out.println("invalid move, press enter to continue");
-		try {
-			byte[] n = new byte[8192];
-			System.in.read(n);
-		} catch (java.io.IOException e) {
-			System.out.println("IO Error");
-			try {
-				Thread.sleep(4000);
-			} catch (InterruptedException f) {
-				f.printStackTrace();
-			}
-		}
-		//System.exit(2);
-		// restore previous physical board state, or flash warning
-		return this;
 	}
 
 	// executes pending changes
@@ -692,14 +678,12 @@ public class Board {
 
 		public void execute() {
 
-			//Pathing.reset();
+			path.reset();
 			for (Move p : phys) {
-				// TODO SPEC: Pathing.execute(p);
+				path.path(p);
 			}
 
 			for (Move v : virt) {
-			// move from src to dst
-				// System.err.printf("virtual move: 0x%02x to 0x%02x\n", v.src, v.dst);
 				movePiece(v.src, v.dst);
 			}
 
