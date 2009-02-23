@@ -170,9 +170,9 @@ public class HWInterface
      }
 //Reset the magnetic head back to the starting position. Should not be called directly.
 
-     private byte squareNumber(int x, int y)
+     private int squareNumber(int x, int y)
      {
-         byte s;
+         int s;
          if(x<9&&x>0) s=(byte)(8-x);
          else s=(x==0)?(byte)9:8;
          s<<=4;
