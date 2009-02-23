@@ -21,9 +21,11 @@ To sample the data, a side will sample the incoming stream on a wire at 8 or 16 
   * 01 X00 000 ma(G)net control
   * 10 XXX XXX misc game (A)ctions
     * 10 111 111 (S)can
-    * 10 111 0XX tur(N) start
-      * 10 111 001 blac(K) to play
-      * 10 111 010 whit(E) to play
+    * 10 1ZZ 0XX tur(N) start
+      * 10 1ZZ 001 blac(K) to play
+      * 10 1ZZ 010 whit(E) to play
+      * ZZ: 00: normal turn
+      * ZZ: 01: draw offered
     * 10 000 0XX game (O)ver
       * 10 000 001 (B)lack wins
       * 10 000 010 (W)hite wins
