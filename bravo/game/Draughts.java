@@ -18,8 +18,6 @@ public class Draughts {
 	GameState state;
 	BoardState bstate;
 
-	private Turn[] history; // TODO to be implemented
-
 	public Draughts(HWInterface h, Player b, Player w) {
 		black = b.sit(this, false);
 		white = w.sit(this, true);
@@ -71,8 +69,8 @@ public class Draughts {
 
 		for (;;) {
 			int gameopts = h.gameStart();
-			Player b = makePlayer(gameopts & 0x07);
-			Player w = makePlayer((gameopts>>3) & 0x07);
+			Player b = makePlayer((gameopts>>3) & 0x07);
+			Player w = makePlayer(gameopts & 0x07);
 
 			Draughts game = new Draughts(h, b, w);
 			if (h instanceof DummyHWInterface) { ((DummyHWInterface)h).setGame(game); }

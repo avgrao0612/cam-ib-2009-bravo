@@ -71,7 +71,7 @@ public class HWInterface
     // this is called at the START of every turn
      public void nextRound(boolean player, GameState gstate)
      {
-         byte side = player?BLACK_TURN:WHITE_TURN;
+         byte side = player?WHITE_TURN:BLACK_TURN;
          byte state = (byte)(gstate.ordinal() << 3);
          transmit("nextRound", (byte)(side|state));
      }
