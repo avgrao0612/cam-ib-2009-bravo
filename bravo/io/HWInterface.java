@@ -18,9 +18,7 @@ public class HWInterface
      private final byte RESET=0x3f;
      private final byte MAGNET_ON=0x60,MAGNET_OFF=0x40;
      private final byte SCAN_REQUEST=(byte)0xbf,BLACK_TURN=(byte)0xa1,WHITE_TURN=(byte)0xa2;
-     //private final byte BLACK_WIN=(byte)0x81,WHITE_WIN=(byte)0x82,DRAW=(byte)0x83;
-     private final byte /*NORMAL=(byte)0xc0,JUMP=(byte)0xc1,MORE_JUMPS=(byte)0xc2,*/ERROR=(byte)0xff;
-     // the commented parts are no longer necessary, since i have added them into Board.java as enums
+     private final byte ERROR=(byte)0xff;
 //All the signals sent from Java to Verilog
 
      private final byte CONTINUE=0x00,WISH_TO_DRAW=0x10,RESIGN=0x20;
@@ -32,6 +30,7 @@ public class HWInterface
 
      private InputStream is;
      private OutputStream os;
+     private boolean currentPlayer;
 
      public HWInterface(String portName,int baudRate)
      {
@@ -51,7 +50,6 @@ public class HWInterface
      }
 //The name of the serial port needs to be identified before run this code.
 
-
      public int gameStart()
      {
          int gameOption=receive("gameStart",START_OPTION_CHECKER);
@@ -69,18 +67,17 @@ public class HWInterface
  *  Black player
 */
 
-     public void nextRound(boolean player, GameState gstate)
+     public void nextRound(boolean nextPlayer, GameState gstate)
      {
-         byte side = player?BLACK_TURN:WHITE_TURN;
+         byte side = nextPlayer?BLACK_TURN:WHITE_TURN;
          byte state = (byte)(gstate.ordinal() << 3);
          transmit("nextRound", (byte)(side|state));
-         // this doesn't need to wait for reply, it's just to tell the hardware the state of the game
+         currentPlayer=!nextPlayer;
      }
 
      public void gameOver(EndGame gend)
      {
          transmit("gameOver", (byte)(gend.ordinal()|0x80));
-         // this doesn't need to wait for reply, it's just to tell the hardware the state of the game
      }
 
      public boolean[] scan()
@@ -141,7 +138,7 @@ public class HWInterface
          {
              default: case CONTINUE: return EndTurn.NORMAL;
              case WISH_TO_DRAW: return EndTurn.DRAW;
-             case RESIGN: return EndTurn.RESIGN;
+             case RESIGN: int winner=currentPlayer?1:2;transmit("proceed",(byte)(winner|0x80));return EndTurn.RESIGN;
          }
      }
 //This method is called to indicate the situation of the game. It requires the board to be fixed
@@ -208,7 +205,11 @@ public class HWInterface
                  int byteNumber=is.read(data);
                  if (byteNumber<1) continue;
                  for(int i=0;i<validSignal.length;i++)
-                    if(data[0]==validSignal[i]) return data[0];
+                    if(data[0]==validSignal[i])
+                    {
+                        System.out.println(data[0]);
+                        return data[0];
+                    }
              }
          }
          catch(Exception e)
@@ -245,12 +246,15 @@ public class HWInterface
 //This method is called to receive a signal. Only the signals that have the required
 //signal format will be accepted so the method will not return until one of them is
 //is received. Return -1 if something wrong has happened.
-   /*  public static void main(String[] args)
+     public static void main(String[] args)
      {
          HWInterface hwi=new HWInterface("COM4",115200);
-         hwi.reset();
+         //hwi.reset();
          //hwi.magnetSwitch(true);
-         hwi.moveHead(1);
-     }*/
+         //hwi.moveHead(1);
+         //hwi.nextRound(true, 0);
+         //int i=hwi.proceed(3);
+         //System.out.println(i);
+     }
 }
 
