@@ -10,6 +10,7 @@ package bravo.io;
 import bravo.game.Draughts.*;
 import bravo.game.Board.*;
 import javax.comm.*;
+//import gnu.io.*; // an alternative to javax.comm
 import java.io.*;
 
 public class HWInterface
@@ -30,7 +31,6 @@ public class HWInterface
 
      private InputStream is;
      private OutputStream os;
-     private boolean currentPlayer;
 
      public HWInterface(String portName,int baudRate)
      {
@@ -67,12 +67,13 @@ public class HWInterface
  *  Black player
 */
 
-     public void nextRound(boolean nextPlayer, GameState gstate)
+    // tells the hardware whose turn it is now, and what state the game is in
+    // this is called at the START of every turn
+     public void nextRound(boolean player, GameState gstate)
      {
-         byte side = nextPlayer?BLACK_TURN:WHITE_TURN;
+         byte side = player?BLACK_TURN:WHITE_TURN;
          byte state = (byte)(gstate.ordinal() << 3);
          transmit("nextRound", (byte)(side|state));
-         currentPlayer=!nextPlayer;
      }
 
      public void gameOver(EndGame gend)
@@ -138,7 +139,7 @@ public class HWInterface
          {
              default: case CONTINUE: return EndTurn.NORMAL;
              case WISH_TO_DRAW: return EndTurn.DRAW;
-             case RESIGN: int winner=currentPlayer?1:2;transmit("proceed",(byte)(winner|0x80));return EndTurn.RESIGN;
+             case RESIGN: return EndTurn.RESIGN;
          }
      }
 //This method is called to indicate the situation of the game. It requires the board to be fixed
@@ -222,7 +223,7 @@ public class HWInterface
 //This method is called to receive a signal. Only the signals that are member of
 //validSignal will be accepted so the method will not return until one of them is
 //is received. Return -1 if something wrong has happened.
-     
+
      private int receive(String method, byte signalType)
      {
          try
