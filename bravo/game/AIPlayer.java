@@ -29,7 +29,7 @@ public class AIPlayer extends Player{
 			double s = scoreForTree(b.nextState(t), depth-1, pre + " |");
 			// if (turns > 8 && depth > 3) { System.err.println(pre + "-" + t + " " + s); }
 			if (s<lowest) { lowest = s; }
-			if (lowest <= 0.0) { break; } // optimisation
+			if (lowest < Double.MIN_VALUE) { break; } // optimisation
 		}
 
 		//System.err.print(depth + " " + k + ", score: " + (1.0-lowest) + "\r");
@@ -37,6 +37,7 @@ public class AIPlayer extends Player{
 
 	}
 
+	java.util.Random rdx = new java.util.Random();
 	protected Turn bestTree(Board b, int depth){
 		//Board highestBoard = null;
 		//if (tough==0){
@@ -44,9 +45,9 @@ public class AIPlayer extends Player{
 		//return null;
 		//}
 		//else{
-		// TODO: if scores are even, make it pick a random one
 		Turn turn = null;
 		double lowest = 1.0;
+		int c = 0;
 
 		for (Turn t: b.getValidTurns())
 		{
@@ -55,11 +56,14 @@ public class AIPlayer extends Player{
 			// System.err.print(t + ", score: ");
 			System.err.printf("%.4f", 1.0-s);
 
-			// if turn is null then it's a guaranteed loss
-			if (turn == null || s < lowest) { turn = t; lowest = s; }
+			if (turn == null) { turn = t; lowest = s; c = 1; }
+			else if (s-lowest < Double.MIN_VALUE && lowest-s < Double.MIN_VALUE) {
+				// if scores are the same, pick a random turn
+				if (rdx.nextInt(++c) == 0) { turn = t; }
+			} else if (s < lowest) { turn = t; lowest = s; c = 1; }
 
 			System.err.print((turn == null)? "\r": " | " + turn + "\r");
-			if (lowest <= 0.0) { break; } // optimisation
+			if (lowest < Double.MIN_VALUE) { break; } // optimisation
 		}
 
 		return turn;

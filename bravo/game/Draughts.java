@@ -7,8 +7,6 @@ import bravo.game.Board.*;
 
 public class Draughts {
 
-	final static byte NONE = Board.NONE;
-
 	public enum GameState { NORMAL, DRAWOFFER }
 	public enum EndTurn { NORMAL, DRAW, RESIGN }
 	public enum EndGame { NONE, BLACK, WHITE, DRAW }
@@ -69,26 +67,26 @@ public class Draughts {
 	public static void main(String[] args) {
 		testSuite();
 
-		HWInterface h = new DummyHWInterface("none", 115200);
-		int gameopts = h.gameStart();
+		HWInterface h = (args.length == 0)? new HWInterface("none", 115200): new DummyHWInterface(args);
 
+		for (;;) {
+			int gameopts = h.gameStart();
+			Player b = makePlayer(gameopts & 0x07);
+			Player w = makePlayer((gameopts>>3) & 0x07);
 
-		
-		try {
-			Player b = (args[0].equals("H"))? new HumanPlayer(): new AIPlayer(Integer.parseInt(args[0]));
-			Player w = (args[1].equals("H"))? new HumanPlayer(): new AIPlayer(Integer.parseInt(args[1]));
 			Draughts game = new Draughts(h, b, w);
-			((DummyHWInterface)h).setGame(game);
+			if (h instanceof DummyHWInterface) { ((DummyHWInterface)h).setGame(game); }
+
 			game.handleWinner(game.play());
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.err.println("Usage: Draughts [black] [white]");
-			System.err.println("H means a human player; a number means an AI player with that toughness (recommended 7).");
-			System.exit(2);
 		}
-		
 
+	}
+
+	private static Player makePlayer(int opt) {
+		return
+			(opt&4) != 0? new AIPlayer(7):
+			(opt&2) != 0? new AIPlayer(5):
+			(opt&1) != 0? new AIPlayer(3): new HumanPlayer();
 	}
 
 	/*public static void printByteArray(String t, byte[] bs) {
@@ -123,14 +121,50 @@ public class Draughts {
 		System.out.println(ts.contains(new Turn((byte)0x13, (byte)0x15, new byte[]{0x24, 0x44, 0x42, 0x22})));
 		*/
 	}
-	
+
 	public static class DummyHWInterface extends HWInterface {
-	
-		public DummyHWInterface(String s, int b) { super(s,b); }
-		
+
+		int opt = -1;
+		public DummyHWInterface(String[] args) {
+			super("USB1", 115200);
+			try {
+				int o = 0;
+				o |= (args[1].equals("H"))? 0: Integer.parseInt(args[1]);
+				o <<= 3;
+				o |= (args[0].equals("H"))? 0: Integer.parseInt(args[0]);
+				opt = o;
+			} catch (Exception e) {
+				System.err.println("Usage: Draughts [black] [white]");
+				System.err.println("H means a human player; a number means an AI player with that toughness (1=easy,2,3=hard).");
+			}
+		}
+
 		Draughts game;
 		public void setGame(Draughts g) { game = g; }
-		
+
+		private boolean[] skel;
+		public void setDummyState(boolean[] s) { skel = s; }
+
+		public int gameStart() {
+			if (opt > 0) { int o = opt; opt = -1; return o; }
+			for (;;) {
+				try {
+					byte[] in = new byte[8192];
+					System.err.print("enter the game parameters [black][white], or nothing to exit: ");
+					int s = System.in.read(in);
+					if (s < 2) { System.exit(0); }
+					int b = in[0] == 'H'? 0: 1 << (Byte.parseByte(new String(in, 0, 1))-1);
+					int w = in[1] == 'H'? 0: 1 << (Byte.parseByte(new String(in, 1, 1))-1);
+					return (b<<3|w);
+				} catch (java.io.IOException e) {
+					System.exit(1);
+				} catch (NumberFormatException e) {
+					System.err.println("Usage: [black][white]");
+					System.err.println("H means a human player; a number means an AI player with that toughness (1=easy,2,3=hard).");
+				}
+			}
+		}
+		public void nextRound(boolean player, GameState gstate) {}
 		public void gameOver(EndGame g) {
 			switch (g) {
 			case BLACK: System.out.println("black wins"); return;
@@ -138,15 +172,7 @@ public class Draughts {
 			case DRAW: System.out.println("draw"); return;
 			}
 		}
-		
-		private boolean[] skel;
-		public void setDummyState(boolean[] s) { skel = s; }
 		public boolean[] scan() { return skel; }
-		
-		private void transmit(String method, byte signal) { }
-		private int receive(String method, byte[] validSignal) { return 0; }
-		private int receive(String method, byte signalType) { return 0; }
-		
 		public EndTurn proceed(BoardState bstate) {
 			boolean[] skel;
 			try {
@@ -163,13 +189,14 @@ public class Draughts {
 			} catch (NumberFormatException e) {
 				skel = doRandomTurn();
 			}
-			((DummyHWInterface)game.hwi).setDummyState(skel);
-			
+			setDummyState(skel);
+
 			return EndTurn.NORMAL;
 		}
-
+		public void moveHead(int direction) {}
+		public void magnetSwitch(boolean power) {}
 		public void reset() {
-			((DummyHWInterface)game.hwi).setDummyState(game.board.getStateSkel());
+			setDummyState(game.board.getStateSkel());
 		}
 
 		java.util.Random rdx = new java.util.Random();
@@ -187,7 +214,7 @@ public class Draughts {
 		}
 
 
-		
+
 	}
 
 }
