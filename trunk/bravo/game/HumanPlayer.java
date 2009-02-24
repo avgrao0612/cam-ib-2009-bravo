@@ -2,7 +2,6 @@ package bravo.game;
 
 import bravo.game.Draughts.*;
 import bravo.game.Board.*;
-import bravo.io.HWInterface;
 
 // a class that gets human input and interfaces this with the game class
 
