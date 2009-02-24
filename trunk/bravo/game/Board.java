@@ -39,6 +39,8 @@ public class Board {
 	private HashSet<Turn> vt = new HashSet<Turn>();
 	private Pathing path;
 
+	private ArrayList<Turn> history; // TODO: implement
+
 	// initialise a board
 	public Board(HWInterface hwi) {
 		path = new Pathing(hwi);
@@ -647,7 +649,7 @@ public class Board {
 			return b.boardState;
 		}
 	}
-	
+
 	public BoardState applyBoardState(Turn t) {
 		byte[] chg = new byte[256];
 		for (int i=0; i<256; ++i) { chg[i] = NONE; }
