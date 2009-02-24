@@ -83,14 +83,6 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
 
     private int[] pathWithMagnetOn(Move move)
     {
-        if(move.src==move.dst)
-        {
-            int[] a={0};
-            return a;
-//If the source and destination of a move is the same, return 0 to show that it does not move
-        }
-        else
-        {
             int[][]board=setBoard(move);
             int startX=xcoordinate(move.src);
             int startY=ycoordinate(move.src);
@@ -113,14 +105,13 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
             previousY=ycoordinate(move.dst);
             int[] p=bestRoute(paths);
             return p;
-        }
     }
 //This method takes a Move and return an int array containing a series of
 //individual movement to achieve it. It returns null if there is no valid
 //path that can be generated, though theoretically that should never happen
 //as long as the game is played in a resonable manner.
 
-    public static int xcoordinate(byte a)
+    private int xcoordinate(byte a)
     {
         int x = (a >> 4) & 0x0F;
         return (x < 8)? 8-x: (x == 8)? 9: (x == 9)? 0: -1;
@@ -128,7 +119,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
 //Find the x-coordinate of a square given its square number. Return -1
 //if no such square exists.
 
-    public static int ycoordinate(byte a)
+    private int ycoordinate(byte a)
     {
         int y = a & 0x0F;
         return (y < 8)? y+1: (y == 8)? 0: (y == 9)? 9: -1;
