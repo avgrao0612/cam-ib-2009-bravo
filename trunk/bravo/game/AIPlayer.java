@@ -22,14 +22,13 @@ public class AIPlayer extends Player{
 
 	protected double scoreForTree(Board b, int depth, String pre){
 		if (depth == 0) { return b.piecesRatio(); }
-		double lowest = 1.0;
+		double lowest = 2.0; // if no moves valid (ie. lost), will return score as -1.0
 
 		for (Turn t: b.getValidTurns())
 		{
 			double s = scoreForTree(b.nextState(t), depth-1, pre + " |");
 			// if (turns > 8 && depth > 3) { System.err.println(pre + "-" + t + " " + s); }
 			if (s<lowest) { lowest = s; }
-			if (lowest < Double.MIN_VALUE) { break; } // optimisation
 		}
 
 		//System.err.print(depth + " " + k + ", score: " + (1.0-lowest) + "\r");
@@ -63,7 +62,6 @@ public class AIPlayer extends Player{
 			} else if (s < lowest) { turn = t; lowest = s; c = 1; }
 
 			System.err.print((turn == null)? "\r": " | " + turn + "\r");
-			if (lowest < Double.MIN_VALUE) { break; } // optimisation
 		}
 
 		return turn;

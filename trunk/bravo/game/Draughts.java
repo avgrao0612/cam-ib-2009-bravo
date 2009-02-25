@@ -127,12 +127,12 @@ public class Draughts {
 			super("USB1", 115200);
 			try {
 				int o = 0;
-				o |= (args[1].equals("H"))? 0: Integer.parseInt(args[1]);
+				o |= args[0].charAt(0) == 'H'? 0: 1 << (Byte.parseByte(args[0].substring(0,1))-1);
 				o <<= 3;
-				o |= (args[0].equals("H"))? 0: Integer.parseInt(args[0]);
+				o |= args[0].charAt(1) == 'H'? 0: 1 << (Byte.parseByte(args[0].substring(1,2))-1);
 				opt = o;
 			} catch (Exception e) {
-				System.err.println("Usage: Draughts [black] [white]");
+				System.err.println("Usage: Draughts [black][white]");
 				System.err.println("H means a human player; a number means an AI player with that toughness (1=easy,2,3=hard).");
 			}
 		}

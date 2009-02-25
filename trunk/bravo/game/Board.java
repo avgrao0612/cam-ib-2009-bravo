@@ -56,6 +56,9 @@ public class Board {
 			cell[black[i]&B] = new Piece(false, !inPlay(black[i]), black[i]);
 			cell[white[i]&B] = new Piece(true, !inPlay(white[i]), white[i]);
 		}
+		//cell[0x13] = new Piece(false, true, (byte)0x13);
+		//cell[0x31] = new Piece(true, true, (byte)0x31);
+		//cell[0x15] = new Piece(true, true, (byte)0x15);
 
 		setValidTurns();
 		System.err.print(this);
@@ -519,6 +522,7 @@ public class Board {
 
 			if ((f = chg[capt&B]) == NONE) {
 				// not captured yet, assign a free reserve for it
+				// TODO: fix corner case
 				try {
 					kdst = cell[capt&B].king? fres[1][frEKi++]: fres[0][frENi++];
 				} catch (ArrayIndexOutOfBoundsException e) {
