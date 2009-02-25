@@ -29,6 +29,9 @@ public class AIPlayer extends Player{
 			double s = scoreForTree(b.nextState(t), depth-1, pre + " |");
 			// if (turns > 8 && depth > 3) { System.err.println(pre + "-" + t + " " + s); }
 			if (s<lowest) { lowest = s; }
+			if (lowest < -Double.MIN_VALUE) { break; } // optimisation
+			// must NOT break when == 0, since calculation of deeper trees may reveal preceding trees with score=0
+			// which may result in an infinite loop, or a slower winning move
 		}
 
 		//System.err.print(depth + " " + k + ", score: " + (1.0-lowest) + "\r");
@@ -45,8 +48,11 @@ public class AIPlayer extends Player{
 		//}
 		//else{
 		Turn turn = null;
-		double lowest = 1.0;
+		double lowest = 2.0;
 		int c = 0;
+
+		// optimise
+		if (b.getValidTurns().size() == 1) { for (Turn t: b.getValidTurns()) { return t; } }
 
 		for (Turn t: b.getValidTurns())
 		{
@@ -62,6 +68,9 @@ public class AIPlayer extends Player{
 			} else if (s < lowest) { turn = t; lowest = s; c = 1; }
 
 			System.err.print((turn == null)? "\r": " | " + turn + "\r");
+			if (lowest < -Double.MIN_VALUE) { break; } // optimisation
+			// must NOT break when == 0, since calculation of deeper trees may reveal preceding trees with score=0
+			// which may result in an infinite loop or a slower winning move
 		}
 
 		return turn;
