@@ -9,8 +9,8 @@ package bravo.io;
 
 import bravo.game.Draughts.*;
 import bravo.game.Board.*;
-import javax.comm.*;
-//import gnu.io.*; // an alternative to javax.comm
+//import javax.comm.*;
+import gnu.io.*; // an alternative to javax.comm
 import java.io.*;
 
 public class HWInterface
@@ -39,8 +39,10 @@ public class HWInterface
              CommPortIdentifier cpi=CommPortIdentifier.getPortIdentifier(portName);
              SerialPort port=(SerialPort)cpi.open(this.getClass().getName(),1000);
              port.setSerialPortParams(baudRate,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
-             is=port.getInputStream();
-             os=port.getOutputStream();
+             //is=port.getInputStream();
+             //os=port.getOutputStream();
+             is=System.in;
+             os=new FileOutputStream("/dev/null");
          }
          catch(Exception e)
          {
@@ -186,6 +188,7 @@ public class HWInterface
          data[0]=signal;
          try
          {
+             System.out.println("TX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
              os.write(data);
          }
          catch(Exception e)
@@ -208,7 +211,7 @@ public class HWInterface
                  for(int i=0;i<validSignal.length;i++)
                     if(data[0]==validSignal[i])
                     {
-                        System.out.println(data[0]);
+                        System.out.println("RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                     }
              }
@@ -234,7 +237,10 @@ public class HWInterface
              {
                  int byteNumber=is.read(data);
                  if (byteNumber<1) continue;
-                 if((data[0]&checker^signalType)==0) return data[0];
+                 if((data[0]&checker^signalType)==0) {
+                        System.out.println("RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
+                        return data[0];
+                 }
              }
          }
          catch(Exception e)
