@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+use bytes;
+$| = 1;
+
+while($line=<STDIN>)
+{
+    chop;
+    print chr(oct($line));
+}

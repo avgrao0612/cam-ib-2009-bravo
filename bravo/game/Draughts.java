@@ -65,7 +65,7 @@ public class Draughts {
 	public static void main(String[] args) {
 		testSuite();
 
-		HWInterface h = (args.length == 0)? new HWInterface("none", 115200): new DummyHWInterface(args);
+		HWInterface h = (args.length == 0)? new HWInterface("/dev/ttyS0", 115200): new DummyHWInterface(args);
 
 		for (;;) {
 			int gameopts = h.gameStart();
