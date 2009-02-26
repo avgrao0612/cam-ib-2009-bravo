@@ -16,7 +16,7 @@ import bravo.io.HWInterface;
 
 public class Board {
 
-	public enum BoardState { NORMAL, JUMP, MORE_JUMPS, MUST_MOVE, ERR_NO_KINGS_LEFT, ERR_NO_FREE_RESERVES, U_6, ERR_MISC }
+	public enum BoardState { NORMAL, MUST_JUMP, MORE_JUMPS, NO_CHANGES, ERR_NO_KINGS_LEFT, ERR_NO_FREE_RESERVES, U_6, ERR_MISC }
 
 	final static byte OUT_X = 0x08;
 	final static byte OUT_Y = -0x80; // 0x80
@@ -37,6 +37,7 @@ public class Board {
 	private Piece cell[] = new Piece[256];
 	private boolean who; // next mover
 	private HashSet<Turn> vt = new HashSet<Turn>();
+	private boolean mustJump;
 	private Pathing path;
 
 	private ArrayList<Turn> history = new ArrayList<Turn>();
@@ -355,13 +356,13 @@ public class Board {
 	public Board setValidTurns() {
 		vt.clear();
 
-		boolean jps = false;
+		mustJump = false;
 
 		for (Piece p : cell) {
 			if (p == null || p.side != who || !inPlay(p.pos)) { continue; }
 
 			// only check moves if there are no jumps
-			if (!jps) {
+			if (!mustJump) {
 				// check moves forwards
 				byte frm = halfTestValidMove(p.pos, true, true);
 				byte flm = halfTestValidMove(p.pos, false, true);
@@ -379,7 +380,7 @@ public class Board {
 
 			// check jumps
 			for (Turn j : getAvailableJumps(p.pos)) {
-				if (!jps) { vt.clear(); jps = true; } // first jump encountered clears the set
+				if (!mustJump) { vt.clear(); mustJump = true; } // first jump encountered clears the set
 				vt.add(j);
 			}
 
@@ -435,7 +436,7 @@ public class Board {
 			flags = 0;
 			if (skel[i] && cell[i] == null) {
 				flags |= C_INS;
-				if (inPlay((byte)i)) { flags |= C_LIVE; } // else the following flags are meaningless
+				if (inPlay((byte)i)) { flags |= C_LIVE; chg[i] = flags; changed = true; continue; }
 				if (inKRCol((byte)i)) { flags |= C_KING; }
 				if (sideOf((byte)i) != who) { flags |= C_ALLY; } // reserves are on opposite side
 			} else if (!skel[i] && cell[i] != null) {
@@ -446,7 +447,7 @@ public class Board {
 			chg[i] = flags;
 			changed = true;
 		}
-		if (!changed) { throw new BoardStateError(BoardState.MUST_MOVE); }
+		if (!changed) { throw new BoardStateError(BoardState.NO_CHANGES); }
 
 		return chg;
 	}
@@ -468,16 +469,11 @@ public class Board {
 	** plan-VIRT: update the board status
 	*/
 
-	private PendingChanges validateAndPlan(Turn t, byte[] chg, byte[][] fres, int[] highest) {
+	private PendingChanges validateAndPlan(Turn t, byte[] chg, HashSet<Byte>[] chgmap, byte[][] fres, int[] highest) {
 		ArrayList<Move> phys = new ArrayList<Move>();
 		ArrayList<Move> virt = new ArrayList<Move>();
 
-		// create a reverse map of changes so we can keep track of what has already been processed
-		@SuppressWarnings("unchecked") // stupid compiler
-		HashSet<Byte>[] chgm = new HashSet[16];
-		int i;
-		for (i=0; i<16; ++i) { chgm[i] = new HashSet<Byte>(); }
-		for (i=0; i<256; ++i) { if (chg[i] != NONE) { chgm[chg[i]].add(new Byte((byte)i)); } }
+		HashSet<Byte>[] chgm = null; // place to clone chgmap into
 
 		/* check TURN OK
 		** TURN.dst in ins-live
@@ -501,14 +497,33 @@ public class Board {
 		byte f, ksrc, kdst; // placeholder for any flag, src, dst, needed
 
 		Move theMove = new Move(t.src, t.dst);
-		if (highest == null) {
+		if (chg == null) {
+			// planning only, no validation
 			phys.add(theMove);
 		} else {
 			// match Turn t to changes made to the physical board
-			if ((f = chg[t.dst&B]) == NONE || (f & 0x0C) != 0x0C) { return null; }
-			chgm[f].remove(t.dst);
 			if ((f = chg[t.src&B]) == NONE || (f & 0x0C) != 0x04) { return null; }
-			chgm[f].remove(t.src);
+			if ((f = chg[t.dst&B]) == NONE || (f & 0x0C) != 0x0C) {
+				// detect MORE_JUMPS here
+				if (t.capt.length > 1 && chgmap[f = C_INS|C_LIVE|0|0].size() == 1) {
+					kdst = chgmap[f].iterator().next();
+					byte[] p = t.getPath();
+					for (int i=0; i<p.length; ++i) {
+						if (kdst == p[i]) {
+							throw new BoardStateError(BoardState.MORE_JUMPS);
+						}
+					}
+				}
+				return null;
+			}
+
+			// we've matched a turn, so start validating the other changes
+			// clone chgmap to keep track of changes already validated
+			@SuppressWarnings("unchecked") // re-init'ing chgm directly causes javac to bitch
+			HashSet<Byte>[] chgm2 = new HashSet[16]; chgm = chgm2;
+			for (int i=0; i<16; ++i) { chgm[i] = new HashSet<Byte>(chgmap[i]); }
+			chgm[chg[t.src&B]].remove(t.src);
+			chgm[chg[t.dst&B]].remove(t.dst);
 		}
 		virt.add(theMove);
 
@@ -521,8 +536,7 @@ public class Board {
 		int notcapt = 0;
 		for (byte capt : t.capt) {
 			Move capture;
-
-			if ((f = chg[capt&B]) == NONE) {
+			if (chg == null || (f = chg[capt&B]) == NONE) {
 				// not captured yet, assign a free reserve for it
 				// TODO: fix corner case
 				try {
@@ -554,7 +568,7 @@ public class Board {
 
 		if (!cell[t.src&B].king && levelUp(t.dst)) {
 			Move nrmoff, kingon;
-			if (chgm[f = 0|0|C_KING|C_ALLY].size() > chgm[C_INS|0|C_KING|C_ALLY].size()) {
+			if (chgm != null && chgm[f = 0|0|C_KING|C_ALLY].size() > chgm[C_INS|0|C_KING|C_ALLY].size()) {
 				// king already done
 				itrb = chgm[f].iterator();
 				ksrc = itrb.next(); itrb.remove();
@@ -611,7 +625,12 @@ public class Board {
 
 		// make sure there are no more extraneous changes
 		// depending on how advanced the error-correction above is, this could be removed
-		for (HashSet<Byte> hb : chgm) { /*Draughts.printByteArray("yeah", hb.toArray());*/ if (hb.size() > 0) { return null; } }
+		if (chgm != null) {
+			for (HashSet<Byte> hb : chgm) {
+				// Draughts.printByteArray("yeah", hb.toArray());
+				if (hb.size() > 0) { return null; }
+			}
+		}
 
 		return new PendingChanges(t, phys.toArray(new Move[phys.size()]), virt.toArray(new Move[virt.size()]));
 	}
@@ -621,7 +640,12 @@ public class Board {
 	// which requires the least changes
 	private PendingChanges getPendingChanges(boolean[] skel) {
 		byte[] chg = getStateSkelChanges(skel);
-		int[] high = new int[]{Integer.MAX_VALUE};
+
+		// create a reverse map of changes so we can keep track of what has already been processed
+		@SuppressWarnings("unchecked") // stupid compiler
+		HashSet<Byte>[] chgmap = new HashSet[16];
+		for (int i=0; i<16; ++i) { chgmap[i] = new HashSet<Byte>(); }
+		for (int i=0; i<256; ++i) { if (chg[i] != NONE) { chgmap[chg[i]].add(new Byte((byte)i)); } }
 
 		byte[][] fres = new byte[][]{
 			getReserves(false, false, false),
@@ -629,17 +653,47 @@ public class Board {
 			getReserves(false, true, false),
 			getReserves(false, true, true),
 		};
-		//shuffleByteArray(fres[0]); shuffleByteArray(fres[1]);
-		//shuffleByteArray(fres[2]); shuffleByteArray(fres[3]);
 
-		// TODO: detect jumps, multijumps
+		int[] high = new int[]{Integer.MAX_VALUE};
+
+		BoardStateError lastOverlookedError = null;
 		PendingChanges pc = null, p = null;
 		for (Turn t : vt) {
-			p = validateAndPlan(t, chg, fres, high);
-			if (p != null) { pc = p; }
+			try {
+				p = validateAndPlan(t, chg, chgmap, fres, high);
+				if (p != null) { pc = p; }
+			} catch (BoardStateError e) {
+				switch (e.boardState) {
+				case MORE_JUMPS:
+				case ERR_NO_FREE_RESERVES:
+					lastOverlookedError = e;
+					break;
+				default:
+					throw e;
+				}
+			}
 		}
 
-		if (pc == null) { throw new BoardStateError(BoardState.ERR_MISC); }
+		if (pc == null) {
+			// detect MUST_JUMP
+			byte f;
+			if (mustJump && chgmap[f = C_INS|C_LIVE|0|0].size() == 1) {
+				byte src, dst = chgmap[f].iterator().next();
+				assert(dst != NONE);
+				if (chgmap[f = 0|C_LIVE|C_KING|C_ALLY].size() == 1) {
+					src = chgmap[f].iterator().next();
+					if (dst == posOf(src, true, false, false) || dst == posOf(src, false, false, false)) {
+						throw new BoardStateError(BoardState.MUST_JUMP);
+					}
+				} else if (chgmap[f = 0|C_LIVE|0|C_ALLY].size() == 1) {
+					src = chgmap[f].iterator().next();
+				} else { src = NONE; }
+				if (dst == posOf(src, true, true, false) || dst == posOf(src, false, true, false)) {
+					throw new BoardStateError(BoardState.MUST_JUMP);
+				}
+			}
+			throw lastOverlookedError != null? lastOverlookedError: new BoardStateError(BoardState.ERR_MISC);
+		}
 		return pc;
 	}
 
@@ -654,7 +708,7 @@ public class Board {
 			updateBoard(pc);
 			return BoardState.NORMAL;
 		} catch (BoardStateError b) {
-			/*System.out.println("GOT HEREVV");*/
+			//System.err.println("BoardStateError: " + b.boardState);
 			return b.boardState;
 		}
 	}
@@ -662,18 +716,14 @@ public class Board {
 	public boolean executePhysical(Turn t) {
 		if (!vt.contains(t)) { return false; }
 
-		byte[] chg = new byte[256];
-		for (int i=0; i<256; ++i) { chg[i] = NONE; }
 		byte[][] fres = new byte[][]{
 			getReserves(false, false, false),
 			getReserves(false, false, true),
 			getReserves(false, true, false),
 			getReserves(false, true, true),
 		};
-		//shuffleByteArray(fres[0]); shuffleByteArray(fres[1]);
-		//shuffleByteArray(fres[2]); shuffleByteArray(fres[3]);
-		validateAndPlan(t, chg, fres, null).executePhysical();
 
+		validateAndPlan(t, null, null, fres, null).executePhysical();
 		return true;
 	}
 
