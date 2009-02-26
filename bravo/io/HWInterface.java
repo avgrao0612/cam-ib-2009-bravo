@@ -12,6 +12,7 @@ import bravo.game.Board.*;
 //import javax.comm.*;
 import gnu.io.*; // an alternative to javax.comm
 import java.io.*;
+import java.util.Arrays;
 
 public class HWInterface
 {
@@ -39,15 +40,21 @@ public class HWInterface
              CommPortIdentifier cpi=CommPortIdentifier.getPortIdentifier(portName);
              SerialPort port=(SerialPort)cpi.open(this.getClass().getName(),1000);
              port.setSerialPortParams(baudRate,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
-             //is=port.getInputStream();
-             //os=port.getOutputStream();
-             is=System.in;
-             os=new FileOutputStream("/dev/null");
+             is=port.getInputStream();
+             os=port.getOutputStream();
+             throw new Exception("force testing through stdin");
          }
          catch(Exception e)
          {
              System.out.print("Initialisation error has occured: ");
              System.err.println(e);
+             System.out.println("Using stdin instead. ");
+             try {
+                 is=System.in;
+                 os=new FileOutputStream("/dev/null");
+             } catch (Exception ee) {
+                 System.exit(1);
+             }
          }
      }
 //The name of the serial port needs to be identified before run this code.
@@ -97,17 +104,17 @@ public class HWInterface
              rowState[byteNumber]=(byte)rowAlinement;
              byteNumber++;
          }
-         int[][] board=new int[10][10];
-         for(int i=0;i<rowState.length;i++)
+         boolean[] boardState=new boolean[256];
+         for(int c=0;c<rowState.length;c++)
          {
-             int rowNumber=i/2;
-             byte rowAlinement=rowState[i];
+             int i=c>>1;
+             byte rowAlinement=rowState[c];
              if((rowAlinement&POSITION_CHECKER)==POSITION_CHECKER)
              {
                  for(int j=4;j>=0;j--)
                  {
-                     board[rowNumber][j]=rowAlinement%2;
-                     rowAlinement/=2;
+                     boardState[squareNumber(i,j)] = (rowAlinement&1)==1? true: false;
+                     rowAlinement>>=1;
                  }
 //Left half of the row alinement.
              }
@@ -115,19 +122,41 @@ public class HWInterface
              {
                  for(int j=9;j>=5;j--)
                  {
-                     board[rowNumber][j]=rowAlinement%2;
-                     rowAlinement/=2;
+                     boardState[squareNumber(i,j)] = (rowAlinement&1)==1? true: false;
+                     rowAlinement>>=1;
                  }
              }
          }
 //Right half of the row alinement.
-         boolean[] boardState=new boolean[256];
-         for(int i=0;i<board.length;i++)
-             for(int j=0;j<board[i].length;j++)
-             {
-                 int squareNumber=squareNumber(i,j);
-                 boardState[squareNumber]=(board[i][j]==1)?true:false;
-             }
+
+/*
+		int[] c = {8, 0, 1, 2, 3, 4, 5, 6, 7, 9};
+		String cellsep = "+---+---+---+---+---+---+---+---+---+---+\n";
+		String rowsep = "+   +---+---+---+---+---+---+---+---+   +\n";
+
+		StringBuffer out = new StringBuffer();
+		out.append(cellsep);
+
+		int x, y;
+		char ch;
+		for (int i=c.length-1; i>=0; --i) {
+			y = c[i];
+			out.append("|");
+
+			for (int j=0; j<c.length; ++j) {
+				x = c[j];
+				ch = boardState[y<<4|x]?'.':' ';
+				out.append(" ").append(ch).append(y<8||x==9?" |":"  ");
+
+			}
+			out.append(" ").append(y).append("\n").append(y==8?cellsep:rowsep);
+
+		}
+		out.append("  8   0   1   2   3   4   5   6   7   9 x\\y\n");
+
+		System.out.println(out.toString());
+*/
+
          return boardState;
      }
 //Calling scan returns the current board state.

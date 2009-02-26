@@ -16,7 +16,7 @@ import bravo.io.HWInterface;
 
 public class Board {
 
-	public enum BoardState { NORMAL, JUMP, MORE_JUMPS, U_3, ERR_NO_KINGS_LEFT, ERR_NO_FREE_RESERVES, U_6, ERR_MISC }
+	public enum BoardState { NORMAL, JUMP, MORE_JUMPS, MUST_MOVE, ERR_NO_KINGS_LEFT, ERR_NO_FREE_RESERVES, U_6, ERR_MISC }
 
 	final static byte OUT_X = 0x08;
 	final static byte OUT_Y = -0x80; // 0x80
@@ -28,10 +28,10 @@ public class Board {
 	// i'm not fucking using shorts when bytes will suffice.
 
 	final static byte[][] RES = new byte[][]{
-		new byte[]{-0x70, -0x69, -0x68, -0x67, 0x48, 0x49, 0x58, 0x59, 0x68, 0x69, 0x78, 0x79}, // BN
-		new byte[]{-0x6F, -0x6E, -0x6D, -0x6C, -0x6B, -0x6A}, // BK
+		new byte[]{-0x70, -0x69, -0x68, -0x67, 0x78, 0x79, 0x68, 0x69, 0x58, 0x59, 0x48, 0x49}, // BN
+		new byte[]{-0x6D, -0x6C, -0x6E, -0x6B, -0x6F, -0x6A}, // BK
 		new byte[]{-0x80, -0x79, -0x78, -0x77, 0x08, 0x09, 0x18, 0x19, 0x28, 0x29, 0x38, 0x39}, // WN
-		new byte[]{-0x7F, -0x7E, -0x7D, -0x7C, -0x7B, -0x7A}, // WK
+		new byte[]{-0x7D, -0x7C, -0x7E, -0x7B, -0x7F, -0x7A}, // WK
 	};
 
 	private Piece cell[] = new Piece[256];
@@ -39,7 +39,8 @@ public class Board {
 	private HashSet<Turn> vt = new HashSet<Turn>();
 	private Pathing path;
 
-	private ArrayList<Turn> history; // TODO: implement
+	private ArrayList<Turn> history = new ArrayList<Turn>();
+	private int turnsDullFor;
 
 	// initialise a board
 	public Board(HWInterface hwi) {
@@ -164,7 +165,7 @@ public class Board {
 		out.append("  8   0   1   2   3   4   5   6   7   9 x\\y\n");
 		//out.append(" 14  12  10   8   0   1   2   3   4   5   6   7   9  11  13  15  x\\y\n");
 		//out.append(piecesRatio() + "\n");
-		out.append((who)?"white to move\n":"black to move\n");
+		out.append(who?"white to move\n":"black to move\n");
 
 		return out.toString();
 	}
@@ -193,6 +194,7 @@ public class Board {
 	}
 
 	public boolean who() { return who; }
+	public int turnsDullFor() { return turnsDullFor; }
 
 	// whether a given position is on the opponent's last row
 	public boolean levelUp(byte pos) {
@@ -397,8 +399,6 @@ public class Board {
 		return (HashSet<Turn>)vt.clone();
 	}
 
-	// TODO: research draw conditions
-
 
 	/*************************************************************************
 	 * Validate state-skeleton
@@ -431,6 +431,7 @@ public class Board {
 		byte[] chg = new byte[256];
 
 		byte flags = 0;
+		boolean changed = false;
 		for (int i=0; i<256; ++i) {
 			flags = 0;
 			if (skel[i] && cell[i] == null) {
@@ -444,7 +445,9 @@ public class Board {
 				if (cell[i].side == who) { flags |= C_ALLY; }
 			} else { chg[i] = NONE; continue; }
 			chg[i] = flags;
+			changed = true;
 		}
+		if (!changed) { throw new BoardStateError(BoardState.MUST_MOVE); }
 
 		return chg;
 	}
@@ -534,6 +537,8 @@ public class Board {
 				++notcapt;
 			} else {
 				// already captured
+				chgm[f].remove(new Byte(capt));
+
 				// find a cell that the piece could have been moved to
 				if (chgm[f = (byte)(C_INS|0|(cell[capt&B].king?C_KING:0)|0)].size() == 0) { return null; }
 				itrb = chgm[f].iterator();
@@ -607,7 +612,7 @@ public class Board {
 
 		// make sure there are no more extraneous changes
 		// depending on how advanced the error-correction above is, this could be removed
-		for (HashSet<Byte> hb : chgm) { if (hb.size() > 0) { return null; } }
+		for (HashSet<Byte> hb : chgm) { /*Draughts.printByteArray("yeah", hb.toArray());*/ if (hb.size() > 0) { return null; } }
 
 		return new PendingChanges(t, phys.toArray(new Move[phys.size()]), virt.toArray(new Move[virt.size()]));
 	}
@@ -625,8 +630,8 @@ public class Board {
 			getReserves(false, true, false),
 			getReserves(false, true, true),
 		};
-		shuffleByteArray(fres[0]); shuffleByteArray(fres[1]);
-		shuffleByteArray(fres[2]); shuffleByteArray(fres[3]);
+		//shuffleByteArray(fres[0]); shuffleByteArray(fres[1]);
+		//shuffleByteArray(fres[2]); shuffleByteArray(fres[3]);
 
 		// TODO: detect jumps, multijumps
 		PendingChanges pc = null, p = null;
@@ -650,11 +655,14 @@ public class Board {
 			updateBoard(pc);
 			return BoardState.NORMAL;
 		} catch (BoardStateError b) {
+			/*System.out.println("GOT HEREVV");*/
 			return b.boardState;
 		}
 	}
 
-	public BoardState applyBoardState(Turn t) {
+	public boolean executePhysical(Turn t) {
+		if (!vt.contains(t)) { return false; }
+
 		byte[] chg = new byte[256];
 		for (int i=0; i<256; ++i) { chg[i] = NONE; }
 		byte[][] fres = new byte[][]{
@@ -663,18 +671,22 @@ public class Board {
 			getReserves(false, true, false),
 			getReserves(false, true, true),
 		};
-		shuffleByteArray(fres[0]); shuffleByteArray(fres[1]);
-		shuffleByteArray(fres[2]); shuffleByteArray(fres[3]);
-		updateBoard(validateAndPlan(t, chg, fres, null));
-		return BoardState.NORMAL;
+		//shuffleByteArray(fres[0]); shuffleByteArray(fres[1]);
+		//shuffleByteArray(fres[2]); shuffleByteArray(fres[3]);
+		validateAndPlan(t, chg, fres, null).executePhysical();
+
+		return true;
 	}
 
 	// executes pending changes
 	private Board updateBoard(PendingChanges pc) {
-		System.err.println(pc.turn);
-		assert(vt.contains(pc.turn));
+		Turn t;
+		System.err.println(t = pc.turn);
+		assert(vt.contains(t));
 
+		turnsDullFor = (t.capt.length > 1 || !cell[t.src&B].king && levelUp(t.dst))? 0: turnsDullFor + 1;
 		pc.execute();
+		history.add(t);
 
 		who = !who;
 		setValidTurns();
@@ -704,10 +716,18 @@ public class Board {
 		}
 
 		public void execute() {
-			for (Move v : virt) { movePiece(v.src, v.dst); }
 			path.reset();
 			for (Move p : phys) { path.path(p); }
+			for (Move v : virt) { movePiece(v.src, v.dst); }
 		}
+
+		public void executePhysical() {
+			for (Move v : virt) { movePiece(v.src, v.dst); } // hack, required for DummyHWInterface
+			path.reset();
+			for (Move p : phys) { /* System.out.printf("0x%02x 0x%02x\n", p.src, p.dst); */ path.path(p); }
+			for (int i=virt.length-1; i>=0; --i) { movePiece(virt[i].dst, virt[i].src); } // hack, required for DummyHWInterface
+		}
+
 	}
 
 	private class BoardStateError extends RuntimeException {

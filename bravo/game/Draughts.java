@@ -48,6 +48,7 @@ public class Draughts {
 			case RESIGN:
 				return board.who()? EndGame.BLACK: EndGame.WHITE;
 			}
+			if (board.turnsDullFor() >= 40) { return EndGame.DRAW; }
 		}
 		return board.who()? EndGame.BLACK: EndGame.WHITE;
 	}
@@ -87,11 +88,16 @@ public class Draughts {
 			(opt&1) != 0? new AIPlayer(3): new HumanPlayer();
 	}
 
-	/*public static void printByteArray(String t, byte[] bs) {
+	public static void printByteArray(String t, byte[] bs) {
 		System.err.print(t + ": [ ");
 		for (byte b: bs) { System.err.printf("0x%02x ",b); }
 		System.err.println("]");
-	}*/
+	}
+	public static void printByteArray(String t, Object[] bs) {
+		System.err.print(t + ": [ ");
+		for (Object b: bs) { System.err.printf("0x%02x ",((Byte)b).byteValue()); }
+		System.err.println("]");
+	}
 
 	public static void testSuite() {
 
@@ -170,7 +176,40 @@ public class Draughts {
 			case DRAW: System.out.println("draw"); return;
 			}
 		}
-		public boolean[] scan() { return skel; }
+		public boolean[] scan() {
+
+/*
+		int[] c = {8, 0, 1, 2, 3, 4, 5, 6, 7, 9};
+		String cellsep = "+---+---+---+---+---+---+---+---+---+---+\n";
+		String rowsep = "+   +---+---+---+---+---+---+---+---+   +\n";
+
+		StringBuffer out = new StringBuffer();
+		out.append(cellsep);
+
+		int x, y;
+		char ch;
+		for (int i=c.length-1; i>=0; --i) {
+			y = c[i];
+			out.append("|");
+
+			for (int j=0; j<c.length; ++j) {
+				x = c[j];
+				ch = skel[y<<4|x]?'.':' ';
+				out.append(" ").append(ch).append(y<8||x==9?" |":"  ");
+
+			}
+			out.append(" ").append(y).append("\n").append(y==8?cellsep:rowsep);
+
+		}
+		out.append("  8   0   1   2   3   4   5   6   7   9 x\\y\n");
+*/
+		//System.out.println(out.toString());
+
+			//try {Thread.sleep(200);} catch (InterruptedException e) {}
+
+
+			return skel;
+		}
 		public EndTurn proceed(BoardState bstate) {
 			boolean[] skel;
 			try {
