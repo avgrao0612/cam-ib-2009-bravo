@@ -236,17 +236,16 @@ public class Board {
 	 *************************************************************************/
 
 	/*
-	 * only kings can move backwards
-	 *
-	 * move - diagonal 1
-	 * jump - diagonal 2
-	 *   multijump - diagonal 2, any direction (even normal pieces)
-	 *
-	 * king - if non-king lands on back row, turn ends
-	 *
-	 * game ends when other player has no valid moves left (this includes no pieces)
-	 * ie. only need to check hasValidMoves()
-	 */
+	** only kings can move backwards
+	**
+	** move - diagonal 1
+	** jump - diagonal 2, multi-jump
+	**
+	** king - if non-king lands on back row, turn ends
+	**
+	** game ends when other player has no valid moves left (this includes no pieces)
+	** ie. only need to check hasValidMoves()
+	*/
 
 	/* calculates the new position of a move from start
 	**
@@ -697,7 +696,7 @@ public class Board {
 
 	private Piece movePiece(byte src, byte dst) {
 		Piece p = cell[dst&B] = cell[src&B];
-		// if (p == null) { throw new RuntimeException(String.format("asked to move a non-existent piece: 0x%02x to 0k%02x", src, dst)); }
+		assert(p != null);
 		p.pos = dst;
 		cell[src&B] = null;
 		return p;
