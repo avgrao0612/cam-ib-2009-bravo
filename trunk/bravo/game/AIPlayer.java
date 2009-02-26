@@ -83,7 +83,7 @@ public class AIPlayer extends Player{
 			Turn bestTurn = bestTree(game.board, tough);
 			System.err.println("");
 
-			game.board.applyBoardState(bestTurn);
+			game.board.executePhysical(bestTurn);
 			return EndTurn.NORMAL; // TODO: find better draw conditions
 
 		case DRAWOFFER:
