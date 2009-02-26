@@ -239,13 +239,13 @@ public class HWInterface
              {
                  int byteNumber=is.read(data);
                  if (byteNumber<1) continue;
-                        //System.out.println("RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                  for(int i=0;i<validSignal.length;i++)
                     if(data[0]==validSignal[i])
                     {
                         System.out.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                     }
+                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
              }
          }
          catch(Exception e)
@@ -269,11 +269,11 @@ public class HWInterface
              {
                  int byteNumber=is.read(data);
                  if (byteNumber<1) continue;
-                        //System.out.println("RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                  if((data[0]&checker^signalType)==0) {
                         System.out.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                  }
+                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
              }
          }
          catch(Exception e)
