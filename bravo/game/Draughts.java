@@ -130,7 +130,7 @@ public class Draughts {
 
 		int opt = -1;
 		public DummyHWInterface(String[] args) {
-			super("USB1", 115200);
+			super("/dev/ttyS0", 115200);
 			try {
 				int o = 0;
 				o |= args[0].charAt(0) == 'H'? 0: 1 << (Byte.parseByte(args[0].substring(0,1))-1);

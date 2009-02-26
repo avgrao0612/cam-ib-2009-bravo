@@ -42,7 +42,7 @@ public class HWInterface
              port.setSerialPortParams(baudRate,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
              is=port.getInputStream();
              os=port.getOutputStream();
-             throw new Exception("force testing through stdin");
+             //throw new Exception("force testing through stdin");
          }
          catch(Exception e)
          {
@@ -163,7 +163,7 @@ public class HWInterface
 
      public EndTurn proceed(BoardState situation)
      {
-         transmit("proceed", (byte)(situation.ordinal()>3?ERROR:situation.ordinal()|0xC0));
+         transmit("proceed", (byte)(situation.ordinal()>4?ERROR:situation.ordinal()|0xC0));
          int playerResponse=receive("proceed",(byte)0);
 //player must play a move, or fix the board first.
          switch(playerResponse)
@@ -196,6 +196,8 @@ public class HWInterface
      public void reset()
      {
          transmit("reset",RESET);
+         byte[] validData={ACKNOWLEDGEMENT};
+         receive("reset",validData);
      }
 //Reset the magnetic head back to the starting position. Should not be called directly.
 
@@ -237,10 +239,11 @@ public class HWInterface
              {
                  int byteNumber=is.read(data);
                  if (byteNumber<1) continue;
+                        //System.out.println("RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                  for(int i=0;i<validSignal.length;i++)
                     if(data[0]==validSignal[i])
                     {
-                        System.out.println("RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
+                        System.out.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                     }
              }
@@ -266,8 +269,9 @@ public class HWInterface
              {
                  int byteNumber=is.read(data);
                  if (byteNumber<1) continue;
+                        //System.out.println("RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                  if((data[0]&checker^signalType)==0) {
-                        System.out.println("RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
+                        System.out.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                  }
              }

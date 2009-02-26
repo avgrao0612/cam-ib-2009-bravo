@@ -23,9 +23,12 @@ public class Turn {
 
 	// returns the intermediate steps, if this is a multi-jump
 	public byte[] getPath() {
-		if (capt.length == 0) { return new byte[]{}; }
+		if (capt.length < 2) { return new byte[]{}; }
 		byte[] c = new byte[capt.length-1];
-		// TODO: code this
+		c[0] = (byte)(capt[0] - src + capt[0]);
+		for (int i=1; i<c.length; ++i) {
+			c[i] = (byte)(capt[i] - c[i-1] + capt[i]);
+		}
 		return c;
 	}
 
@@ -44,6 +47,15 @@ public class Turn {
 			}
 			out.append("]");
 		}
+		byte[] p = getPath();
+		if (p.length > 0) {
+			out.append(String.format(" {0x%02x", p[0]));
+			for (int i=1; i<p.length; ++i) {
+				out.append(String.format(", 0x%02x", p[i]));
+			}
+			out.append("}");
+		}
+
 		return out.toString();
 	}
 
