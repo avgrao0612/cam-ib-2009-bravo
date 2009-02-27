@@ -46,12 +46,14 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
                 path(new Move(NE_S, NE_C), skel);
                 skel[NE_C&B] = true;
                 skel[NE_S&B] = false;
+                move = new Move(move.src, NE_S);
             }
 	} else if (move.dst == SW_C && !skel[SW_C&B]) {
             if (skel[SW_N&B] && skel[SW_E&B] && move.src != SW_N && move.src != SW_E) {
                 path(new Move(SW_N, SW_C), skel);
                 skel[SW_C&B] = true;
                 skel[SW_N&B] = false;
+                move = new Move(move.src, SW_N);
             }
 	}
         int[] p1=pathWithMagnetOff(move);
