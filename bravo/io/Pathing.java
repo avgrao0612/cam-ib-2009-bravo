@@ -34,14 +34,32 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         this.hwi=hwi;
     }
 
-    public void path(Move move)
+    final static int B = 0x00FF;
+    final static byte NE_C=-0x67, NE_S=0x79, NE_W=-0x69;
+    final static byte SW_C=-0x78, SW_N=0x08, SW_E=-0x80;
+
+    public void path(Move move, boolean[] skel)
     {
+        // fix corner cases
+        if (move.dst == NE_C && !skel[NE_C&B]) {
+            if (skel[NE_S&B] && skel[NE_W&B] && move.src != NE_S && move.src != NE_W) {
+                path(new Move(NE_S, NE_C), skel);
+                skel[NE_C&B] = true;
+                skel[NE_S&B] = false;
+            }
+	} else if (move.dst == SW_C && !skel[SW_C&B]) {
+            if (skel[SW_N&B] && skel[SW_E&B] && move.src != SW_N && move.src != SW_E) {
+                path(new Move(SW_N, SW_C), skel);
+                skel[SW_C&B] = true;
+                skel[SW_N&B] = false;
+            }
+	}
         int[] p1=pathWithMagnetOff(move);
         for(int i=0;i<p1.length;i++)
             hwi.moveHead(p1[i]);
 //Move the magnetic head to the piece to be moved.
         hwi.magnetSwitch(true);
-        int[] p2=pathWithMagnetOn(move);
+        int[] p2=pathWithMagnetOn(move, skel);
         for(int i=0;i<p2.length;i++)
             hwi.moveHead(p2[i]);
 //Drag the piece to its destination.
@@ -52,6 +70,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
     public void reset()
     {
         hwi.reset();
+	hwi.offset_h();
         previousX=0;
         previousY=0;
     }
@@ -81,9 +100,9 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         return p;
     }
 
-    private int[] pathWithMagnetOn(Move move)
+    private int[] pathWithMagnetOn(Move move, boolean[] skel)
     {
-            int[][]board=setBoard(move);
+            int[][]board=setBoard(move, skel);
             int startX=xcoordinate(move.src);
             int startY=ycoordinate(move.src);
             int endX=xcoordinate(move.dst);
@@ -127,14 +146,13 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
 //Find the y-coordinate of a square given its square number. Return -1
 //if no such square exists.
 
-    private int[][] setBoard(Move move)
+    private int[][] setBoard(Move move, boolean[] skel)
     {
-        int[][] board=new int[10][];
-        for(int i=0;i<board.length;i++)
-           board[i]=new int[10];
-        for(int i=0;i<board.length;i++)
-          for(int j=0;j<board[i].length;j++)
-             if((i+j)%2==1&&i!=0&&i!=board.length-1&&j!=0&&j!=board[i].length-1) board[i][j]=2;
+        int[][] board=new int[10][10];
+        for(int i=0;i<256;++i) {
+           int x = xcoordinate((byte)i), y = ycoordinate((byte)i);
+           if(x>=0 && y>=0 && skel[i]) board[x][y]=2;
+        }
         board[xcoordinate(move.src)][ycoordinate(move.src)]=1;
         board[xcoordinate(move.dst)][ycoordinate(move.dst)]=3;
         return board;

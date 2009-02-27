@@ -538,7 +538,6 @@ public class Board {
 			Move capture;
 			if (chg == null || (f = chg[capt&B]) == NONE) {
 				// not captured yet, assign a free reserve for it
-				// TODO: fix corner case
 				try {
 					kdst = cell[capt&B].king? fres[1][frEKi++]: fres[0][frENi++];
 				} catch (ArrayIndexOutOfBoundsException e) {
@@ -766,15 +765,17 @@ public class Board {
 
 		public void execute() {
 			path.reset();
-			for (Move p : phys) { path.path(p); }
+			boolean[] skel = getStateSkel();
+			for (Move p : phys) { path.path(p, skel); }
 			for (Move v : virt) { movePiece(v.src, v.dst); }
 		}
 
 		public void executePhysical() {
 			for (Move v : virt) { movePiece(v.src, v.dst); } // hack, required for DummyHWInterface
 			path.reset();
-			for (Move p : phys) { /* System.out.printf("0x%02x 0x%02x\n", p.src, p.dst); */ path.path(p); }
 			for (int i=virt.length-1; i>=0; --i) { movePiece(virt[i].dst, virt[i].src); } // hack, required for DummyHWInterface
+			boolean[] skel = getStateSkel();
+			for (Move p : phys) { path.path(p, skel); }
 		}
 
 	}

@@ -18,6 +18,7 @@ public class HWInterface
 {
      private final byte[] DIRECTION={0x38,0x00,0x08,0x10,0x18,0x20,0x28,0x30};
      private final byte RESET=0x3f;
+     private final byte OFFSET_H=0x39;
      private final byte MAGNET_ON=0x60,MAGNET_OFF=0x40;
      private final byte SCAN_REQUEST=(byte)0xbf,BLACK_TURN=(byte)0xa1,WHITE_TURN=(byte)0xa2;
      private final byte ERROR=(byte)0xff;
@@ -111,7 +112,7 @@ public class HWInterface
              byte rowAlinement=rowState[c];
              if((rowAlinement&POSITION_CHECKER)==POSITION_CHECKER)
              {
-                 for(int j=0;j<5;++j)
+                 for(int j=9;j>=5;--j)
                  {
                      boardState[squareNumber(i,j)] = (rowAlinement&1)==1? true: false;
                      rowAlinement>>=1;
@@ -120,7 +121,7 @@ public class HWInterface
              }
              else
              {
-                 for(int j=5;j<10;++j)
+                 for(int j=4;j>=0;--j)
                  {
                      boardState[squareNumber(i,j)] = (rowAlinement&1)==1? true: false;
                      rowAlinement>>=1;
@@ -129,7 +130,7 @@ public class HWInterface
          }
 //Right half of the row alinement.
 
-/*
+
 		int[] c = {8, 0, 1, 2, 3, 4, 5, 6, 7, 9};
 		String cellsep = "+---+---+---+---+---+---+---+---+---+---+\n";
 		String rowsep = "+   +---+---+---+---+---+---+---+---+   +\n";
@@ -155,7 +156,7 @@ public class HWInterface
 		out.append("  8   0   1   2   3   4   5   6   7   9 x\\y\n");
 
 		System.out.println(out.toString());
-*/
+		//reset(); System.exit(2);
 
          return boardState;
      }
@@ -199,7 +200,16 @@ public class HWInterface
          byte[] validData={ACKNOWLEDGEMENT};
          receive("reset",validData);
      }
-//Reset the magnetic head back to the starting position. Should not be called directly.
+//Reset the motor back to the starting position. Should not be called directly.
+
+     public void offset_h()
+     {
+         transmit("offset_h",OFFSET_H);
+         transmit("offset_h",OFFSET_H); // dirty HACK since verilog has a weird bug
+         byte[] validData={ACKNOWLEDGEMENT};
+         receive("offset_h",validData);
+     }
+//Reset the magnet head back to column 0. Should not be called directly.
 
      private int squareNumber(int x, int y)
      {
