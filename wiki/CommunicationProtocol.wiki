@@ -17,6 +17,7 @@ To sample the data, a side will sample the incoming stream on a wire at 8 or 16 
   * 00 XXX XXX (M)otor control
     * 00 XXX 000 move in (D)irection
       * This requires an argument of the compass direction (1-8). This can be encoded with 3 bits, 000-111, a good convention would be for 000 to be N and then count up clockwise to 111 being NW. The 3 bits can be the 3rd-5th bits, leaving 3 left if required.
+    * 00 111 001 W-E (O)ffset (for motor)
     * 00 111 111 (R)eset to (0,0)
   * 01 X00 000 ma(G)net control
   * 10 XXX XXX misc game (A)ctions
