@@ -111,7 +111,7 @@ public class HWInterface
              byte rowAlinement=rowState[c];
              if((rowAlinement&POSITION_CHECKER)==POSITION_CHECKER)
              {
-                 for(int j=4;j>=0;j--)
+                 for(int j=0;j<5;++j)
                  {
                      boardState[squareNumber(i,j)] = (rowAlinement&1)==1? true: false;
                      rowAlinement>>=1;
@@ -120,7 +120,7 @@ public class HWInterface
              }
              else
              {
-                 for(int j=9;j>=5;j--)
+                 for(int j=5;j<10;++j)
                  {
                      boardState[squareNumber(i,j)] = (rowAlinement&1)==1? true: false;
                      rowAlinement>>=1;
@@ -245,7 +245,7 @@ public class HWInterface
                         System.out.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                     }
-                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
+//                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
              }
          }
          catch(Exception e)
@@ -273,7 +273,7 @@ public class HWInterface
                         System.out.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                  }
-                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
+//                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
              }
          }
          catch(Exception e)
