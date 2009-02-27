@@ -80,10 +80,16 @@ public class AIPlayer extends Player{
 	public EndTurn doTurn(GameState state, BoardState bstate){
 		switch (state) {
 		default: case NORMAL:
-			Turn bestTurn = bestTree(game.board, tough);
-			System.err.println("");
-
-			game.board.executePhysical(bestTurn);
+			switch (bstate) {
+			case NORMAL:
+			case NO_CHANGES:
+				Turn bestTurn = bestTree(game.board, tough);
+				System.err.println("");
+				game.board.executePhysical(bestTurn);
+				break;
+			default:
+				game.hwi.proceed(bstate);
+			}
 			return EndTurn.NORMAL; // TODO: find better draw conditions
 
 		case DRAWOFFER:
