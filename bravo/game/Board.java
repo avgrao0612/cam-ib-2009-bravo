@@ -497,21 +497,18 @@ public class Board {
 		byte f, ksrc, kdst; // placeholder for any flag, src, dst, needed
 
 		Move theMove = new Move(t.src, t.dst);
-		if (chg == null) {
-			// planning only, no validation
-			phys.add(theMove);
-		} else {
+		byte[] path = t.getPath();
+
+		// only validate if changes are given 
+		if (chg != null) {
 			// match Turn t to changes made to the physical board
 			if ((f = chg[t.src&B]) == NONE || (f & 0x0C) != 0x04) { return null; }
 			if ((f = chg[t.dst&B]) == NONE || (f & 0x0C) != 0x0C) {
 				// detect MORE_JUMPS here
 				if (t.capt.length > 1 && chgmap[f = C_INS|C_LIVE|0|0].size() == 1) {
 					kdst = chgmap[f].iterator().next();
-					byte[] p = t.getPath();
-					for (int i=0; i<p.length; ++i) {
-						if (kdst == p[i]) {
-							throw new BoardStateError(BoardState.MORE_JUMPS);
-						}
+					for (byte p : path) {
+						if (kdst == p) { throw new BoardStateError(BoardState.MORE_JUMPS); }
 					}
 				}
 				return null;
@@ -536,18 +533,7 @@ public class Board {
 		int notcapt = 0;
 		for (byte capt : t.capt) {
 			Move capture;
-			if (chg == null || (f = chg[capt&B]) == NONE) {
-				// not captured yet, assign a free reserve for it
-				try {
-					kdst = cell[capt&B].king? fres[1][frEKi++]: fres[0][frENi++];
-				} catch (ArrayIndexOutOfBoundsException e) {
-					throw new BoardStateError(BoardState.ERR_NO_FREE_RESERVES, e);
-				}
-
-				capture = new Move(capt, kdst);
-				phys.add(capture);
-				++notcapt;
-			} else {
+			if (chg != null && (f = chg[capt&B]) != NONE) {
 				// already captured
 				chgm[f].remove(new Byte(capt));
 
@@ -557,7 +543,25 @@ public class Board {
 				kdst = itrb.next(); itrb.remove();
 
 				capture = new Move(capt, kdst);
+			} else {
+				// not captured yet, assign a free reserve for it
+				try {
+					kdst = cell[capt&B].king? fres[1][frEKi++]: fres[0][frENi++];
+				} catch (ArrayIndexOutOfBoundsException e) {
+					throw new BoardStateError(BoardState.ERR_NO_FREE_RESERVES, e);
+				}
+
+				if (chg == null) {
+					// work out physical move
+					phys.add((notcapt == 0)? new Move(t.src, path.length == 0? t.dst: path[0]):
+						new Move(path[notcapt-1], notcapt == path.length? t.dst: path[notcapt]));
+				}
+
+				capture = new Move(capt, kdst);
+				phys.add(capture);
+				++notcapt;
 			}
+
 			virt.add(capture);
 		}
 
