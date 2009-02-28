@@ -3,6 +3,9 @@ module encoding(
 	input clk,
 	input user_turn_done,
 	input movement_done,
+	input reset_done,
+	input offset_done,
+	input [7:0] input_stream,
 	input sending_scan_left,
 	input sending_scan_right,
 	input resign,
@@ -44,10 +47,22 @@ module encoding(
 			start <= 1;
 			data <= 8'b00100000;
 		end
+		//reset done
+		else if (reset_done) begin
+			start <= 1;
+			data <= 8'b01111111;
+		end
+		//offset move done
+		else if (offset_done) begin
+			start <= 1;
+			data <= 8'b01111001;
+		end
 	//(M)ovement complete
 		else if (movement_done) begin
 			start <= 1;
-			data <= 8'b01000000;
+			data[7:6] <= 2'b01;
+			data[5:3] <= input_stream[5:3];
+			data[2:0] <= 3'b000;
 		end
 	//(S)can data
 		//left side

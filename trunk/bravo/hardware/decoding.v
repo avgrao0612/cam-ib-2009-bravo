@@ -20,8 +20,13 @@ module decoding(
 	output player_must_jump,
 	output more_jumps_available,
 	output unrecoverable_error,
-	output horizontal_offset
+	output did_not_move,
+	output horizontal_offset,
+	
+	output [7:0] LEDG
 	);
+	
+	assign LEDG = dataStream;
 	
 	reg [7:0] dir = 0;
 	reg scan = 0;
@@ -39,6 +44,7 @@ module decoding(
 	reg more_jumps = 0;
 	reg error = 0;
 	reg horiz_offset = 0;
+	reg no_move = 0;
 	
 	assign direction = dir;
 	assign want_scan = scan;
@@ -56,9 +62,19 @@ module decoding(
 	assign more_jumps_available = more_jumps;
 	assign unrecoverable_error = error;
 	assign horizontal_offset = horiz_offset;
+	assign did_not_move = no_move;
 	
+	reg old_state = 0;
+	reg data_start = 0;
+
 	always@(posedge clk) begin
-	if (data_incoming) begin
+	if ((data_incoming != old_state) && data_incoming) begin
+		old_state <= 1;
+		data_start <= 1;
+	end
+	else if ((data_incoming != old_state) && (!data_incoming)) old_state <= 0;
+	else data_start <= 0;
+	if (data_start) begin
 		//(M)otor control
 		if (dataStream[7:6] == 2'b00) begin
 			//move in (D)irection
@@ -117,6 +133,8 @@ module decoding(
 			else if (dataStream[5:0] == 6'b000010) more_jumps <= 1;
 			//unrecoverable error
 			else if (dataStream[5:0] == 6'b111111) error <= 1;
+			//player did not move, please move
+			else if (dataStream[5:0] == 6'b000011) no_move <= 1;
 		end
 	end
 	else begin
@@ -137,24 +155,8 @@ module decoding(
 		must_jump <= 0;
 		more_jumps <= 0;
 		error <= 0;
+		no_move <= 0;
 		draw_offered <= 0;
 	end
-	/*
-	if (new_game) begin
-		black_won <= 0;
-		white_won <= 0;
-		draw_game <= 0;
-		draw_offered <= 0;
-	end
-	if (user_turn_done) begin
-		white_turn <= 0;
-		black_turn <= 0;
-		normal <= 0;
-		must_jump <= 0;
-		more_jumps <= 0;
-		error <= 0;
-		draw_offered <= 0;
-	end
-	*/
 	end
 endmodule

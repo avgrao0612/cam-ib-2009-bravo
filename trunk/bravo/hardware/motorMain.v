@@ -46,11 +46,18 @@ module motorMain(
 	input reset,
 	inout [35:0] GPIO_1,
 	output done,
+	output reg reset_done,
+	output reg offset_done,
 	
-	output [17:0] LEDR
+	output [17:0] LEDR,
+	output [7:0] LEDG
 	);
 	
 	assign LEDR[11:0] = steps_main;
+	assign LEDG[0] = dir_main;
+	assign LEDG[1] = dir_magnet;
+	assign LEDG[2] = done_main;
+	assign LEDG[3] = done_magnet;
 	
 	/*
 	assign LEDR[17] = state_main[3];
@@ -100,6 +107,9 @@ module motorMain(
 	reg im_done = 0;
 	assign done = im_done;
 	
+	reg resetting = 0;
+	reg offsetting = 0;
+	
 	reg [11:0] straight_steps = `straight_steps;
 	reg [11:0] diagonal_steps = `diagonal_steps;
 	reg [11:0] scan_offset = `scan_offset;
@@ -125,14 +135,21 @@ module motorMain(
 	// are converted into forward/backward directions for each
 	// motor.
 	always@(posedge clk) begin
-		//if (boundary_main && boundary_magnet) go_reset <= 0;
-		if (go_main && go_magnet) im_done <= (done_main && done_magnet);
+		if (resetting) reset_done <= (done_main && done_magnet);
+		else if (offsetting) offset_done <= done_magnet;
+		else if (go_main && go_magnet) im_done <= (done_main && done_magnet);
 		else if (go_main) im_done <= done_main;
 		else if (go_magnet) im_done <= done_magnet;
-		if (!go_main && !go_magnet) im_done <= 0;
-		if (im_done) begin
+		if (!go_main && !go_magnet) begin
+			im_done <= 0;
+			reset_done <= 0;
+			offset_done <= 0;
+		end
+		if (im_done || reset_done || offset_done) begin
 			go_main <= 0;
 			go_magnet <= 0;
+			resetting <= 0;
+			offsetting <= 0;
 		end
 		else if (reset) begin
 			go_main <= 1;
@@ -141,6 +158,7 @@ module motorMain(
 			dir_magnet <= 0;
 			steps_main <= 12'b1111_1111_1111;
 			steps_magnet <= 12'b1111_1111_1111;
+			resetting <= 1;
 		end
 		else if (scan_offset_move) begin
 			go_main <= 1;
@@ -156,6 +174,7 @@ module motorMain(
 			go_magnet <= 1;
 			dir_magnet <= 1;
 			steps_magnet <= horizontal_steps;
+			offsetting <= 1;
 		end
 		else if (wire_N) begin
 			go_main <= 1;

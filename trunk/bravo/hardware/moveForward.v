@@ -41,7 +41,7 @@ module moveForward(
 	// then it will update 'state' to the next signal required
 	// to drive the motors.
 	always@(posedge clk) begin
-	if (boundary) im_done <= 1;
+	if (go && boundary) im_done <= 1;
 	else if (go && !im_done) begin
 		if (mysteps	< steps) begin
 			counter <= counter+1;

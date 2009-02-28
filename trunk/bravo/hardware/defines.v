@@ -26,6 +26,7 @@
 `define scan_offset 12'd220
 
 `define horizontal_steps 12'd83
+//`define horizontal_steps 12'd300
 
 `define sensor_0 6'd26
 `define sensor_1 6'd27
