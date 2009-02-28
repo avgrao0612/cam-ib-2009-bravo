@@ -47,7 +47,6 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
                 skel[NE_C&B] = true;
                 skel[NE_S&B] = false;
                 move = new Move(move.src, NE_S);
-                //System.out.println("Remove a piece to the top right corner");
             }
 	} else if (move.dst == SW_C && !skel[SW_C&B]) {
             if (skel[SW_N&B] && skel[SW_E&B] && move.src != SW_N && move.src != SW_E) {
@@ -55,25 +54,18 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
                 skel[SW_C&B] = true;
                 skel[SW_N&B] = false;
                 move = new Move(move.src, SW_N);
-                //System.out.println("Remove a piece to the bottom left corner");
             }
 	}
         int[] p1=pathWithMagnetOff(move);
-        //System.out.println("Moving route complete");
-        //System.out.println("Magnet off");
-       // for(int i=0;i<p1.length;i++)
-           // hwi.moveHead(p1[i]);
-        //System.out.println("Move commence");
-//Move the magnetic head to the piece to be moved.
-       // hwi.magnetSwitch(true);
-        //System.out.println("Magnet on");
+        for(int i=0;i<p1.length;i++)
+           hwi.moveHead(p1[i]);
+//Move the electromagnetic head under the piece to be moved.
+        hwi.magnetSwitch(true);
         int[] p2=pathWithMagnetOn(move, skel);
-       // System.out.println("Dragging route complete");
-      //  for(int i=0;i<p2.length;i++)
-       //     hwi.moveHead(p2[i]);
-        //System.out.println("Dragging complete");
+        for(int i=0;i<p2.length;i++)
+            hwi.moveHead(p2[i]);
 //Drag the piece to its destination.
-       // hwi.magnetSwitch(false);
+        hwi.magnetSwitch(false);
     }
 //The method to be called to invoke a complete move.
 
@@ -318,7 +310,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
          }
     }
 
-     public static void main(String[] args)
+/*     public static void main(String[] args)
     {
         HWInterface hwi=new HWInterface("COM3",115200);
         Pathing p=new Pathing(hwi);
@@ -335,7 +327,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         for(int i=0;i<path.length;i++)
             System.out.print(path[i]+" ");
         System.out.println();
-    }
+    }*/
 //Some tests. Have this removed when implementing it.
 }
 
