@@ -43,7 +43,8 @@ To sample the data, a side will sample the incoming stream on a wire at 8 or 16 
     * 00 000 000 : (T)urn done (implies decline draw)
     * 00 010 000 : offer (D)raw, or accept draw
     * 00 100 000 : r(E)sign
-  * 01 000 000 (M)ovement complete
+  * 01 XXX XXX (M)ovement complete
+    * XXX XXX : as in Motor Control above
   * 10 XYY YYY (S)can data (X left/right side bit, Y scanned data)
     * Scanning a row of data returns 10 bits, 1 for each square on a row of the board (8 live and 2 dead). Setting a bit to 1 for a piece and 0 for empty. The problem is a signal stream only sends a byte (8 bits), therefore multiple streams are needed. A way to do this would be to have a bit to tell if the stream is for the 1st half or the 2nd half then 5 bits to encode that half of the row. So having the 3rd bit can be set to 1 for the left side and 0 for the right side, then the 4th-8th bit being the 5 scanned bits
   * 11 XXX YYY (N)ew game (X black, Y white)
