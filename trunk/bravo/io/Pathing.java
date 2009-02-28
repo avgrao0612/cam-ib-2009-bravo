@@ -47,7 +47,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
                 skel[NE_C&B] = true;
                 skel[NE_S&B] = false;
                 move = new Move(move.src, NE_S);
-                System.out.println("Remove a piece to the top right corner");
+                //System.out.println("Remove a piece to the top right corner");
             }
 	} else if (move.dst == SW_C && !skel[SW_C&B]) {
             if (skel[SW_N&B] && skel[SW_E&B] && move.src != SW_N && move.src != SW_E) {
@@ -55,25 +55,25 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
                 skel[SW_C&B] = true;
                 skel[SW_N&B] = false;
                 move = new Move(move.src, SW_N);
-                System.out.println("Remove a piece to the bottom left corner");
+                //System.out.println("Remove a piece to the bottom left corner");
             }
 	}
         int[] p1=pathWithMagnetOff(move);
-        System.out.println("Moving route complete");
-        System.out.println("Magnet off");
-        for(int i=0;i<p1.length;i++)
-            hwi.moveHead(p1[i]);
-        System.out.println("Move commence");
+        //System.out.println("Moving route complete");
+        //System.out.println("Magnet off");
+       // for(int i=0;i<p1.length;i++)
+           // hwi.moveHead(p1[i]);
+        //System.out.println("Move commence");
 //Move the magnetic head to the piece to be moved.
-        hwi.magnetSwitch(true);
-        System.out.println("Magnet on");
+       // hwi.magnetSwitch(true);
+        //System.out.println("Magnet on");
         int[] p2=pathWithMagnetOn(move, skel);
-        System.out.println("Dragging route complete");
-        for(int i=0;i<p2.length;i++)
-            hwi.moveHead(p2[i]);
-        System.out.println("Dragging complete");
+       // System.out.println("Dragging route complete");
+      //  for(int i=0;i<p2.length;i++)
+       //     hwi.moveHead(p2[i]);
+        //System.out.println("Dragging complete");
 //Drag the piece to its destination.
-        hwi.magnetSwitch(false);
+       // hwi.magnetSwitch(false);
     }
 //The method to be called to invoke a complete move.
 
@@ -110,7 +110,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         return p;
     }
 
-    private int[] pathWithMagnetOn(Move move, boolean[] skel)
+    public int[] pathWithMagnetOn(Move move, boolean[] skel)
     {
             int[][]board=setBoard(move, skel);
             int startX=xcoordinate(move.src);
@@ -119,20 +119,10 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
             int endY=ycoordinate(move.dst);
             Vector path=new Vector();
             Vector paths=new Vector();
-            switch(direction(move))
-            {
-                case 1:goToTop(board,startX,startY,endX,path,paths);break;
-                //Recursion towards the top
-                case 2:goToRight(board,startX,startY,endY,path,paths);break;
-                //Recursion towards the right
-                case 3:goToBottom(board,startX,startY,endX,path,paths);break;
-                //Recursion towards the bottom
-                case 4:goToLeft(board,startX,startY,endY,path,paths);break;
-                //Recursion towards the right
-            }
+            bestPath(startX,startY,endX,endY,board,path,paths);
+            int[] p=bestRoute(paths);
             previousX=xcoordinate(move.dst);
             previousY=ycoordinate(move.dst);
-            int[] p=bestRoute(paths);
             return p;
     }
 //This method takes a Move and return an int array containing a series of
@@ -170,15 +160,6 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
 //Map a Board to boardStatus to represent the positions of all pieces.
 //All black square are assumed to be occupied.
 
-    private int[][] copyBoard(int[][]board)
-    {
-        int[][]copy=new int[board.length][board[0].length];
-        for(int i=0;i<board.length;i++)
-            System.arraycopy(board[i], 0, copy[i], 0, board[i].length);
-        return copy;
-    }
-//Produce a copy of the board status
-
     private int isEndReached(int[][]board,int x,int y)
     {
         if(x>0&&y>0&&board[x-1][y-1]==3) return 1;
@@ -203,282 +184,116 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
            BOTTOM
 */
 
-    private void goToTop(int[][]board,int x,int y,int topBound,Vector path,Vector paths)
-    {
-        int isPathComplete=isEndReached(board,x,y);
-        if(path.size()>99) return;
-//The maximum step a path can take. Any one beyond this is discarded.
-        else if(isPathComplete!=0)
-         {
-            path.add(isPathComplete);
-            paths.addElement(path);
-         }
-/*If the distination can be reached at the next move, store this move and add this
-  path to the set of all valid paths.
-*/
-        else if(x<topBound) return;
-        else
-        {
-            if(x-1>=0&&board[x-1][y]==0)
-              {
-		           int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(2);
-                   goToTop(copy,x-1,y,topBound,p,paths);
-                   //Recursion towards top
-              }
-              if(x-1>=0&&y-1>=0&&board[x-1][y-1]==0)
-              {
-		           int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(1);
-                   goToTop(copy,x-1,y-1,topBound,p,paths);
-                   //Recursion towards topleft
-              }
-              if(x-1>=0&&y+1<board[x-1].length&&board[x-1][y+1]==0)
-              {
-		           int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(3);
-                   goToTop(copy,x-1,y+1,topBound,p,paths);
-                   //Recursion towards topright
-              }
-              if(y-1>=0&&board[x][y-1]==0)
-              {
-                   int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(8);
-                   goToTop(copy,x,y-1,topBound,p,paths);
-                   //Recursion towards left
-              }
-              if(y+1<board[x].length&&board[x][y+1]==0)
-              {
-                   int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(4);
-                   goToTop(copy,x,y+1,topBound,p,paths);
-                   //Recursion towards right
-              }
-        }
-    }
+     private int distance(int currentX, int currentY, int endX, int endY)
+     {
+         return Math.abs(endX-currentX)+Math.abs(endY-currentY);
+     }
 
-    private void goToRight(int[][]board,int x,int y,int rightBound,Vector path,Vector paths)
-    {
-        int isPathComplete=isEndReached(board,x,y);
-        if(path.size()>99) return;
-        else if(isPathComplete!=0)
-         {
-            path.add(isPathComplete);
-            paths.addElement(path);
-         }
-        else if(y>rightBound) return;
-        else
-        {
-              if(y+1<board[x].length&&board[x][y+1]==0)
-              {
-		           int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(4);
-                   goToRight(copy,x,y+1,rightBound,p,paths);
-                   //Recursion towards right
-              }
-              if(x-1>=0&&y+1<board[x-1].length&&board[x-1][y+1]==0)
-              {
-		           int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(3);
-                   goToRight(copy,x-1,y+1,rightBound,p,paths);
-                   //Recursion towards topright
-              }
-              if(x+1<board.length&&y+1<board[x+1].length&&board[x+1][y+1]==0)
-              {
-		           int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(5);
-                   goToRight(copy,x+1,y+1,rightBound,p,paths);
-                   //Recursion towards bottomright
-              }
-              if(x-1>=0&&board[x-1][y]==0)
-              {
-                   int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(2);
-                   goToRight(copy,x-1,y,rightBound,p,paths);
-                   //Recursion towards top
-              }
-              if(x+1<board.length&&board[x+1][y]==0)
-              {
-                   int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(6);
-                   goToRight(copy,x+1,y,rightBound,p,paths);
-                   //Recursion towards bottom
-              }
-        }
-    }
-    private void goToBottom(int[][]board,int x,int y,int bottomBound,Vector path,Vector paths)
-    {
-        int isPathComplete=isEndReached(board,x,y);
-        if(path.size()>99) return;
-        else if(isPathComplete!=0)
-         {
-            path.add(isPathComplete);
-            paths.addElement(path);
-         }
-        else if(x>bottomBound) return;
-        else
-        {
-               if(x+1<board.length&&board[x+1][y]==0)
-               {
-                   int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(6);
-                   goToBottom(copy,x+1,y,bottomBound,p,paths);
-                   //Recursion towards the bottom
-               }
-               if(x+1<board.length&&y+1<board[x+1].length&&board[x+1][y+1]==0)
-               {
-                   int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(5);
-                   goToBottom(copy,x+1,y+1,bottomBound,p,paths);
-                   //Recursion towards the bottomright
-               }
-               if(x+1<board.length&&y-1>=0&&board[x+1][y-1]==0)
-               {
-                   int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(7);
-                   goToBottom(copy,x+1,y-1,bottomBound,p,paths);
-                   //Recursion towards the bottomleft
-               }
-               if(y+1<board[x].length&&board[x][y+1]==0)
-               {
-                   int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(4);
-                   goToBottom(copy,x,y+1,bottomBound,p,paths);
-                   //Recursion towards the right
-               }
-               if(y-1>=0&&board[x][y-1]==0)
-               {
-                   int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(8);
-                   goToBottom(copy,x,y-1,bottomBound,p,paths);
-                   //Recursion towards the left
-               }
-        }
-    }
+     private int[][] copyBoard(int[][]board)
+     {
+        int[][]copy=new int[board.length][board[0].length];
+        for(int i=0;i<board.length;i++)
+            System.arraycopy(board[i], 0, copy[i], 0, board[i].length);
+        return copy;
+     }
+//Produce a copy of the board status
 
-    private void goToLeft(int[][]board,int x,int y,int leftBound,Vector path,Vector paths)
-    {
-        int isPathComplete=isEndReached(board,x,y);
-        if(path.size()>99) return;
-        else if(isPathComplete!=0)
-        {
-            path.add(isPathComplete);
-            paths.addElement(path);
-        }
-        else if(y<leftBound) return;
-        else
-        {
-              if(y-1>=0&&board[x][y-1]==0)
-              {
-                  int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(8);
-                   goToLeft(copy,x,y-1,leftBound,p,paths);
-                  //Recursion towards the right
-              }
-              if(x+1<board.length&&y-1>=0&&board[x+1][y-1]==0)
-              {
-                  int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(7);
-                   goToLeft(copy,x+1,y-1,leftBound,p,paths);
-                   //Recursion towards the bottomright
-              }
-              if(x-1>=0&&y-1>=0&&board[x-1][y-1]==0)
-              {
-                  int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(1);
-                   goToLeft(copy,x-1,y-1,leftBound,p,paths);
-                   //Recursion towards the topright
-              }
-              if(x+1<board.length&&board[x+1][y]==0)
-              {
-                  int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(6);
-                   goToLeft(copy,x+1,y,leftBound,p,paths);
-                  //Recursion towards the bottom
-              }
-              if(x-1>=0&&board[x-1][y]==0)
-              {
-                  int[][]copy=copyBoard(board);
-                   copy[x][y]=1;
-                   Vector p=(Vector)path.clone();
-                   p.add(2);
-                   goToLeft(copy,x-1,y,leftBound,p,paths);
-                  //Recursion towards the top
-              }
-        }
-    }
-    private int direction(Move move)
-    {
-        int startX=xcoordinate(move.src);
-        int startY=ycoordinate(move.src);
-        int endX=xcoordinate(move.dst);
-        int endY=ycoordinate(move.dst);
-        if(endY==startY)
-        {
-            if(endX<startX) return 1;
-            else return 3;
-        }
-        else if((endX-startX)/(endY-startY)<1&&(endX-startX)/(endY-startY)>=-1)
-        {
-            if(endY<startY) return 4;
-            else return 2;
-        }
-        else
-        {
-            if(endX<startX) return 1;
-            else return 3;
-        }
-    }
-/*The area around a piece is split into 4 areas:
-             \ TOP /
-              \ 1 /
-               \_/
-     LEFT  4   |0|   2  RIGHT
-               /-\
-              / 3 \
-             /     \
-             BOTTOM
-  Recursion only takes place in one of the 4 areas depending on the
-  alignment of the start and destination.
-*/
+     private int[] bestDirection(int currentX, int currentY, int endX, int endY, int[][] board)
+     {
+         int[] distances=new int[8];
+         distances[0]=currentX-1>=0&&currentY-1>=0&&board[currentX-1][currentY-1]==0?distance(currentX-1, currentY-1, endX, endY):20;
+         distances[1]=currentX-1>=0&&board[currentX-1][currentY]==0?distance(currentX-1,currentY,endX,endY):20;
+         distances[2]=currentX-1>=0&&currentY+1<=9&&board[currentX-1][currentY+1]==0?distance(currentX-1,currentY+1,endX,endY):20;
+         distances[3]=currentY+1<=9&&board[currentX][currentY+1]==0?distance(currentX,currentY+1,endX,endY):20;
+         distances[4]=currentX+1<=9&&currentY+1<=9&&board[currentX+1][currentY+1]==0?distance(currentX+1,currentY+1,endX,endY):20;
+         distances[5]=currentX+1<=9&&board[currentX+1][currentY]==0?distance(currentX+1,currentY,endX,endY):20;
+         distances[6]=currentX+1<=9&&currentY-1>=0&&board[currentX+1][currentY-1]==0?distance(currentX+1,currentY-1,endX,endY):20;
+         distances[7]=currentY-1>=0&&board[currentX][currentY-1]==0?distance(currentX,currentY-1,endX,endY):20;
+         int direction=0;
+         for(int i=0;i<distances.length;i++)
+         if(distances[i]<distances[direction]) direction=i;
+         direction=distances[direction]<20?direction:-1;
+         int[] nextSquares=new int[8];
+         if(direction==-1) return nextSquares;
+         int minimumDistance=distances[direction];
+         for(int i=0;i<distances.length;i++)
+             if(distances[i]==minimumDistance) nextSquares[i]=1;
+         return nextSquares;
+     }
+
+     private void bestPath(int currentX, int currentY, int endX, int endY, int[][] board, Vector path, Vector paths)
+     {
+         int isPathComplete=isEndReached(board,currentX,currentY);
+         if(isPathComplete>0) {path.add(isPathComplete);paths.add(path);}
+         else
+         {
+             int[] direction=bestDirection(currentX, currentY, endX, endY, board);
+             if(direction[0]==1)
+             {
+                 int[][] b=copyBoard(board);
+                 Vector p=(Vector)path.clone();
+                 p.add(1);
+                 b[currentX-1][currentY-1]=1;
+                 bestPath(currentX-1,currentY-1,endX,endY,b,p,paths);
+             }
+             if(direction[1]==1)
+             {
+                 int[][] b=copyBoard(board);
+                 Vector p=(Vector)path.clone();
+                 p.add(2);
+                 b[currentX-1][currentY]=1;
+                 bestPath(currentX-1,currentY,endX,endY,b,p,paths);
+             }
+             if(direction[2]==1)
+             {
+                 int[][] b=copyBoard(board);
+                 Vector p=(Vector)path.clone();
+                 p.add(3);
+                 b[currentX-1][currentY+1]=1;
+                 bestPath(currentX-1,currentY+1,endX,endY,b,p,paths);
+             }
+             if(direction[3]==1)
+             {
+                 int[][] b=copyBoard(board);
+                 Vector p=(Vector)path.clone();
+                 p.add(4);
+                 b[currentX][currentY+1]=1;
+                 bestPath(currentX,currentY+1,endX,endY,b,p,paths);
+             }
+             if(direction[4]==1)
+             {
+                 int[][] b=copyBoard(board);
+                 Vector p=(Vector)path.clone();
+                 p.add(5);
+                 b[currentX+1][currentY+1]=1;
+                 bestPath(currentX+1,currentY+1,endX,endY,b,p,paths);
+             }
+             if(direction[5]==1)
+             {
+                 int[][] b=copyBoard(board);
+                 Vector p=(Vector)path.clone();
+                 p.add(6);
+                 b[currentX+1][currentY]=1;
+                 bestPath(currentX+1,currentY,endX,endY,b,p,paths);
+             }
+             if(direction[6]==1)
+             {
+                 int[][] b=copyBoard(board);
+                 Vector p=(Vector)path.clone();
+                 p.add(7);
+                 b[currentX+1][currentY-1]=1;
+                 bestPath(currentX+1,currentY-1,endX,endY,b,p,paths);
+             }
+             if(direction[7]==1)
+             {
+                 int[][] b=copyBoard(board);
+                 Vector p=(Vector)path.clone();
+                 p.add(8);
+                 b[currentX][currentY-1]=1;
+                 bestPath(currentX,currentY-1,endX,endY,b,p,paths);
+             }
+         }
+     }
 
     private int[] bestRoute(Vector v)
     {
@@ -502,16 +317,25 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
              return c;
          }
     }
-//Find the shortest path among all paths. Return null if no valid paths available
- /*   public static void main(String[] args)
+
+     public static void main(String[] args)
     {
-        Move m=new Move((byte)0x36,(byte)0x58);
-        Pathing p=new Pathing();
-        int[] a=p.path(m);
-        for(int i=0;i<a.length;i++)
-            System.out.print(a[i]+" ");
+        HWInterface hwi=new HWInterface("COM3",115200);
+        Pathing p=new Pathing(hwi);
+        boolean[] board=new boolean[256];
+        for(int i=0;i<board.length;i++)
+            board[i]=false;
+        board[17]=true;
+        board[0]=true;
+        board[2]=true;
+        board[32]=true;
+        board[34]=true;
+        Move m=new Move((byte)36,(byte)8);
+        int[] path=p.pathWithMagnetOn(m, board);
+        for(int i=0;i<path.length;i++)
+            System.out.print(path[i]+" ");
         System.out.println();
-    }*/
+    }
 //Some tests. Have this removed when implementing it.
 }
 
