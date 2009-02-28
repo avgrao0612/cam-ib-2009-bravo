@@ -47,6 +47,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
                 skel[NE_C&B] = true;
                 skel[NE_S&B] = false;
                 move = new Move(move.src, NE_S);
+                System.out.println("Remove a piece to the top right corner");
             }
 	} else if (move.dst == SW_C && !skel[SW_C&B]) {
             if (skel[SW_N&B] && skel[SW_E&B] && move.src != SW_N && move.src != SW_E) {
@@ -54,16 +55,23 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
                 skel[SW_C&B] = true;
                 skel[SW_N&B] = false;
                 move = new Move(move.src, SW_N);
+                System.out.println("Remove a piece to the bottom left corner");
             }
 	}
         int[] p1=pathWithMagnetOff(move);
+        System.out.println("Moving route complete");
+        System.out.println("Magnet off");
         for(int i=0;i<p1.length;i++)
             hwi.moveHead(p1[i]);
+        System.out.println("Move commence");
 //Move the magnetic head to the piece to be moved.
         hwi.magnetSwitch(true);
+        System.out.println("Magnet on");
         int[] p2=pathWithMagnetOn(move, skel);
+        System.out.println("Dragging route complete");
         for(int i=0;i<p2.length;i++)
             hwi.moveHead(p2[i]);
+        System.out.println("Dragging complete");
 //Drag the piece to its destination.
         hwi.magnetSwitch(false);
     }
@@ -72,7 +80,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
     public void reset()
     {
         hwi.reset();
-	hwi.offset_h();
+	    hwi.offset_h();
         previousX=0;
         previousY=0;
     }
@@ -240,7 +248,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
               }
               if(y-1>=0&&board[x][y-1]==0)
               {
-                  int[][]copy=copyBoard(board);
+                   int[][]copy=copyBoard(board);
                    copy[x][y]=1;
                    Vector p=(Vector)path.clone();
                    p.add(8);
@@ -271,7 +279,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         else if(y>rightBound) return;
         else
         {
-            if(y+1<board[x].length&&board[x][y+1]==0)
+              if(y+1<board[x].length&&board[x][y+1]==0)
               {
 		           int[][]copy=copyBoard(board);
                    copy[x][y]=1;
@@ -330,7 +338,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         else if(x>bottomBound) return;
         else
         {
-            if(x+1<board.length&&board[x+1][y]==0)
+               if(x+1<board.length&&board[x+1][y]==0)
                {
                    int[][]copy=copyBoard(board);
                    copy[x][y]=1;
@@ -383,14 +391,14 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         int isPathComplete=isEndReached(board,x,y);
         if(path.size()>99) return;
         else if(isPathComplete!=0)
-         {
+        {
             path.add(isPathComplete);
             paths.addElement(path);
-         }
+        }
         else if(y<leftBound) return;
         else
         {
-            if(y-1>=0&&board[x][y-1]==0)
+              if(y-1>=0&&board[x][y-1]==0)
               {
                   int[][]copy=copyBoard(board);
                    copy[x][y]=1;

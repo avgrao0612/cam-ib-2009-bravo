@@ -3,14 +3,15 @@
 //DE2 board.
 //However, this class is very machine-dependent, since it requires a special java extension
 //package called Java Communication API, which is not included in the standard JDK. So only the
-//machines with this package can run this code.
+//machines with this package can run this code. Java Communication API is available for downloard
+//from Sun.
 
 package bravo.io;
 
 import bravo.game.Draughts.*;
 import bravo.game.Board.*;
-//import javax.comm.*;
-import gnu.io.*; // an alternative to javax.comm
+//import javax.comm.*;  //If running under Windows
+import gnu.io.*; //If running under Linux
 import java.io.*;
 import java.util.Arrays;
 
@@ -93,10 +94,12 @@ public class HWInterface
 
      public boolean[] scan()
      {
-     // TODO: Janus says that at the end of every row data, he is going to send "movement complete"
          reset();
+//Move the sensors back to their starting position.
          transmit("scan",SCAN_REQUEST);
+//Send out scan request.
          byte[] rowState=new byte[20];
+//The state of the board. 1 represents an occupied square and 0 for a vacant one.
          int byteNumber=0;
          while(byteNumber<20)
          {
@@ -296,15 +299,5 @@ public class HWInterface
 //This method is called to receive a signal. Only the signals that have the required
 //signal format will be accepted so the method will not return until one of them is
 //is received. Return -1 if something wrong has happened.
-     public static void main(String[] args)
-     {
-         HWInterface hwi=new HWInterface("COM4",115200);
-         //hwi.reset();
-         //hwi.magnetSwitch(true);
-         //hwi.moveHead(1);
-         //hwi.nextRound(true, 0);
-         //int i=hwi.proceed(3);
-         //System.out.println(i);
-     }
 }
 
