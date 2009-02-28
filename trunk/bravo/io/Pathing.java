@@ -1,5 +1,5 @@
-//Pathing is responsible for taking a series of Moves and calculating the best way to
-//move the head from one square to another in order to drag a piece to its destination
+//Pathing is responsible for taking a Move and calculating the best way to move the
+//head from one square to another in order to drag a piece to its destination
 //quickly and undisturbed.
 package bravo.io;
 
@@ -81,6 +81,13 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         int nextX=xcoordinate(move.src);
         int nextY=ycoordinate(move.src);
         Vector path=new Vector();
+        while(nextX!=previousX&&nextY!=previousY)
+        {
+            if(nextX>previousX&&nextY>previousY) {previousX++;previousY++;path.addElement(5);}
+            else if(nextX>previousX&&nextY<previousY) {previousX++;previousY--;path.addElement(7);}
+            else if(nextX<previousX&&nextY>previousY) {previousX--;previousY++;path.addElement(3);}
+            else {previousX--;previousY--;path.addElement(1);}
+        }
         while(nextX!=previousX)
         {
             if(nextX>previousX) {previousX++;path.addElement(6);}
@@ -100,9 +107,15 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         return p;
     }
 
-    public int[] pathWithMagnetOn(Move move, boolean[] skel)
+    private int[] pathWithMagnetOn(Move move, boolean[] skel)
     {
             int[][]board=setBoard(move, skel);
+            for(int i=0;i<board.length;i++)
+            {
+                for(int j=0;j<board[i].length;j++)
+                    System.out.print(board[i][j]+" ");
+                System.out.println();
+            }
             int startX=xcoordinate(move.src);
             int startY=ycoordinate(move.src);
             int endX=xcoordinate(move.dst);
@@ -174,6 +187,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
            BOTTOM
 */
 
+     
      private int distance(int currentX, int currentY, int endX, int endY)
      {
          return Math.abs(endX-currentX)+Math.abs(endY-currentY);
@@ -308,19 +322,30 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
          }
     }
 
-/*     public static void main(String[] args)
+  /*   public static void main(String[] args)
     {
         HWInterface hwi=new HWInterface("COM3",115200);
         Pathing p=new Pathing(hwi);
         boolean[] board=new boolean[256];
         for(int i=0;i<board.length;i++)
             board[i]=false;
-        board[17]=true;
-        board[0]=true;
-        board[2]=true;
-        board[32]=true;
-        board[34]=true;
-        Move m=new Move((byte)36,(byte)8);
+        board[144]=true;
+        board[145]=true;
+        board[146]=true;
+        board[147]=true;
+        board[148]=true;
+        board[149]=true;
+        board[150]=true;
+        board[151]=true;
+        board[96]=true;
+        board[98]=true;
+        board[100]=true;
+        board[102]=true;
+        board[105]=true;
+        board[115]=true;
+        board[117]=true;
+        board[119]=true;
+        Move m=new Move((byte)113,(byte)153);
         int[] path=p.pathWithMagnetOn(m, board);
         for(int i=0;i<path.length;i++)
             System.out.print(path[i]+" ");
