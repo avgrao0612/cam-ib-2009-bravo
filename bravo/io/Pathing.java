@@ -44,15 +44,11 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         if (move.dst == NE_C && !skel[NE_C&B]) {
             if (skel[NE_S&B] && skel[NE_W&B] && move.src != NE_S && move.src != NE_W) {
                 path(new Move(NE_S, NE_C), skel);
-                skel[NE_C&B] = true;
-                skel[NE_S&B] = false;
                 move = new Move(move.src, NE_S);
             }
 	} else if (move.dst == SW_C && !skel[SW_C&B]) {
             if (skel[SW_N&B] && skel[SW_E&B] && move.src != SW_N && move.src != SW_E) {
                 path(new Move(SW_N, SW_C), skel);
-                skel[SW_C&B] = true;
-                skel[SW_N&B] = false;
                 move = new Move(move.src, SW_N);
             }
 	}
@@ -66,6 +62,8 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
             hwi.moveHead(p2[i]);
 //Drag the piece to its destination.
         hwi.magnetSwitch(false);
+        skel[move.dst&B] = true;
+        skel[move.src&B] = false;
     }
 //The method to be called to invoke a complete move.
 

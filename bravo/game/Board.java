@@ -556,7 +556,6 @@ public class Board {
 
 				if (chg == null) {
 					// work out physical move
-					System.out.println("Got here");
 					phys.add((notcapt == 0)? new Move(t.src, path.length == 0? t.dst: path[0]):
 						new Move(path[notcapt-1], notcapt == path.length? t.dst: path[notcapt]));
 				}
@@ -701,6 +700,7 @@ public class Board {
 			}
 			throw lastOverlookedError != null? lastOverlookedError: new BoardStateError(BoardState.ERR_MISC);
 		}
+
 		return pc;
 	}
 
@@ -712,7 +712,7 @@ public class Board {
 	public BoardState applyBoardState(boolean[] skel) {
 		try {
 			PendingChanges pc = getPendingChanges(skel);
-			updateBoard(pc);
+			updateBoard(pc, skel);
 			return BoardState.NORMAL;
 		} catch (BoardStateError b) {
 			//System.err.println("BoardStateError: " + b.boardState);
@@ -730,18 +730,18 @@ public class Board {
 			getReserves(false, true, true),
 		};
 
-		validateAndPlan(t, null, null, fres, null).executePhysical();
+		validateAndPlan(t, null, null, fres, null).executePhysical(getStateSkel());
 		return true;
 	}
 
 	// executes pending changes
-	private Board updateBoard(PendingChanges pc) {
+	private Board updateBoard(PendingChanges pc, boolean[] skel) {
 		Turn t;
 		System.err.println(t = pc.turn);
 		assert(vt.contains(t));
 
 		turnsDullFor = (t.capt.length > 1 || !cell[t.src&B].king && levelUp(t.dst))? 0: turnsDullFor + 1;
-		pc.execute();
+		pc.execute(skel);
 		history.add(t);
 
 		who = !who;
@@ -771,18 +771,16 @@ public class Board {
 			virt = v;
 		}
 
-		public void execute() {
+		public void execute(boolean[] skel) {
 			path.reset();
-			boolean[] skel = getStateSkel();
 			for (Move p : phys) { path.path(p, skel); }
 			for (Move v : virt) { movePiece(v.src, v.dst); }
 		}
 
-		public void executePhysical() {
+		public void executePhysical(boolean[] skel) {
 			for (Move v : virt) { movePiece(v.src, v.dst); } // hack, required for DummyHWInterface
 			path.reset();
 			for (int i=virt.length-1; i>=0; --i) { movePiece(virt[i].dst, virt[i].src); } // hack, required for DummyHWInterface
-			boolean[] skel = getStateSkel();
 			for (Move p : phys) { path.path(p, skel); }
 		}
 
