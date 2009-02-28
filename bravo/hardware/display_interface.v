@@ -11,9 +11,10 @@ module display_interface(
 	input player_must_jump,
 	input more_jumps_available,
 	input unrecoverable_error,
+	input did_not_move,
 	input new_game,
 	input user_turn_done,
-	output [9:0] LEDR
+	output [10:0] LEDR
 	);
 	
 	reg black_play = 0;
@@ -26,6 +27,7 @@ module display_interface(
 	reg must_jump = 0;
 	reg more_jumps = 0;
 	reg error = 0;
+	reg no_move = 0;
 	
 	assign LEDR[0] = black_play;
 	assign LEDR[1] = white_play;
@@ -37,6 +39,7 @@ module display_interface(
 	assign LEDR[7] = more_jumps;
 	assign LEDR[8] = error;
 	assign LEDR[9] = draw_offered;
+	assign LEDR[10] = no_move;
 	
 	always@(posedge clk) begin
 		if (black_to_play) begin
@@ -64,6 +67,7 @@ module display_interface(
 			must_jump <= 0;
 			more_jumps <= 0;
 			error <= 0;
+			no_move <= 0;
 			draw_offered <= 0;
 		end
 		else begin
@@ -71,6 +75,7 @@ module display_interface(
 			if (player_must_jump) must_jump <= 1;
 			if (more_jumps_available) more_jumps <= 1;
 			if (unrecoverable_error) error <= 1;
+			if (did_not_move) no_move <= 1;
 		end
 	end
 	

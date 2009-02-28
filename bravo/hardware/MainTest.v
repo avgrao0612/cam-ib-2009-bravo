@@ -143,8 +143,11 @@ motorMain m(
          .reset(reset),
          .GPIO_1(GPIO_0),
          .done(movement_done),
+         .reset_done(reset_done),
+         .offset_done(offset_done)
          
          //.LEDR(LEDR)
+         //.LEDG(LEDG)
          );
 
 sensor_scan s(
@@ -181,16 +184,20 @@ display_interface di(
          .player_must_jump(player_must_jump),
          .more_jumps_available(more_jumps_available),
          .unrecoverable_error(unrecoverable_error),
+         .did_not_move(did_not_move),
          .new_game(!KEY[1]),
          .user_turn_done(!KEY[0]),
          
-         .LEDR(LEDR[9:0])
+         .LEDR(LEDR[10:0])
          );
 
 encoding e(
          .clk(CLOCK_50),
          .user_turn_done(!KEY[0]),
          .movement_done(movement_done),
+         .reset_done(reset_done),
+         .offset_done(offset_done),
+         .input_stream(input_stream),
          .sending_scan_left(sending_scan_left),
          .sending_scan_right(sending_scan_right),
          .resign(!KEY[2]),
@@ -202,7 +209,7 @@ encoding e(
          .white_setting(SW[2:0]),
          
          .dataStream(output_stream),
-         .data_start(TxD_start),
+         .data_start(TxD_start)
          //.LEDG(LEDG),
          //.LEDR(LEDR[9])
          );
@@ -232,7 +239,10 @@ decoding d(
          .player_must_jump(player_must_jump),
          .more_jumps_available(more_jumps_available),
          .unrecoverable_error(unrecoverable_error),
-         .horizontal_offset(horizontal_offset)
+         .did_not_move(did_not_move),
+         .horizontal_offset(horizontal_offset),
+         
+         //.LEDG(LEDG)
          );
 
 async_receiver r(
