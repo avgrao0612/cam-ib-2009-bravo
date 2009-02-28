@@ -521,6 +521,9 @@ public class Board {
 			for (int i=0; i<16; ++i) { chgm[i] = new HashSet<Byte>(chgmap[i]); }
 			chgm[chg[t.src&B]].remove(t.src);
 			chgm[chg[t.dst&B]].remove(t.dst);
+		} else if (t.capt.length == 0) {
+			// captures are dealth with below
+			phys.add(theMove);
 		}
 		virt.add(theMove);
 
@@ -553,6 +556,7 @@ public class Board {
 
 				if (chg == null) {
 					// work out physical move
+					System.out.println("Got here");
 					phys.add((notcapt == 0)? new Move(t.src, path.length == 0? t.dst: path[0]):
 						new Move(path[notcapt-1], notcapt == path.length? t.dst: path[notcapt]));
 				}

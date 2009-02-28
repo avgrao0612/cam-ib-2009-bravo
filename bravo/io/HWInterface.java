@@ -182,9 +182,10 @@ public class HWInterface
 
      public void moveHead(int direction)
      {
-         transmit("moveHead",DIRECTION[direction-1]);
+         byte dir = DIRECTION[direction-1];
+         transmit("moveHead",dir);
 //Transmit th emoving order.
-         byte[] validData={ACKNOWLEDGEMENT};
+         byte[] validData={ACKNOWLEDGEMENT|dir};
          receive("moveHead",validData);
 //The method will be blocked until an acknowledge is received.
      }
@@ -200,7 +201,7 @@ public class HWInterface
      public void reset()
      {
          transmit("reset",RESET);
-         byte[] validData={ACKNOWLEDGEMENT};
+         byte[] validData={ACKNOWLEDGEMENT|RESET};
          receive("reset",validData);
      }
 //Reset the motor back to the starting position. Should not be called directly.
@@ -208,8 +209,8 @@ public class HWInterface
      public void offset_h()
      {
          transmit("offset_h",OFFSET_H);
-         transmit("offset_h",OFFSET_H); // dirty HACK since verilog has a weird bug
-         byte[] validData={ACKNOWLEDGEMENT};
+         //transmit("offset_h",OFFSET_H); // dirty HACK since verilog has a weird bug
+         byte[] validData={ACKNOWLEDGEMENT|OFFSET_H};
          receive("offset_h",validData);
      }
 //Reset the magnet head back to column 0. Should not be called directly.
@@ -258,7 +259,7 @@ public class HWInterface
                         System.out.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                     }
-//                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
+                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
              }
          }
          catch(Exception e)
@@ -286,7 +287,7 @@ public class HWInterface
                         System.out.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                  }
-//                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
+                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
              }
          }
          catch(Exception e)
