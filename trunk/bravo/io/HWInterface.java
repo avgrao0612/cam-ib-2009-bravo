@@ -185,7 +185,7 @@ public class HWInterface
          byte dir = DIRECTION[direction-1];
          transmit("moveHead",dir);
 //Transmit th emoving order.
-         byte[] validData={ACKNOWLEDGEMENT|dir};
+         byte[] validData={(byte)(ACKNOWLEDGEMENT|dir)};
          receive("moveHead",validData);
 //The method will be blocked until an acknowledge is received.
      }
