@@ -67,10 +67,12 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
            hwi.moveHead(p1[i]);
 //Move the electromagnetic head under the piece to be moved.
         hwi.magnetSwitch(true);
+        try { Thread.sleep(200); } catch (InterruptedException e) {}
         int[] p2=pathWithMagnetOn(move, skel);
         for(int i=0;i<p2.length;i++)
             hwi.moveHead(p2[i]);
 //Drag the piece to its destination.
+        try { Thread.sleep(200); } catch (InterruptedException e) {}
         hwi.magnetSwitch(false);
         skel[move.dst&B] = true;
         skel[move.src&B] = false;
