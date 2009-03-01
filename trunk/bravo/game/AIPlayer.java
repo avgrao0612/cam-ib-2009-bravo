@@ -67,6 +67,10 @@ public class AIPlayer extends Player{
 			if (lowest < -Double.MIN_VALUE) { break; } // optimisation
 			// must NOT break when == 0, since calculation of deeper trees may reveal preceding trees with score=0
 			// which may result in an infinite loop or a slower winning move
+
+			// TODO: a better tie-breaking algorithm than "random" (to improve endgame play)
+			// TODO: resign unwinnable positions (lowest > 1 + Double.MIN_VALUE)
+			// TODO: offer draws, maybe
 		}
 
 		return turn;
@@ -86,10 +90,10 @@ public class AIPlayer extends Player{
 			default:
 				game.hwi.proceed(bstate);
 			}
-			return EndTurn.NORMAL; // TODO: find better draw conditions
+			return EndTurn.NORMAL; // TODO: better draw conditions
 
 		case DRAWOFFER:
-			return EndTurn.NORMAL; // TODO: find better draw conditions
+			return EndTurn.NORMAL; // TODO: better draw conditions
 		}
 	}
 
