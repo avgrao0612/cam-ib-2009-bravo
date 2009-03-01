@@ -34,3 +34,497 @@ There are a few websites giving examples of projects and products similar to thi
   * http://www.ruschess.com/Store/Equipment/drboard.html is a commercial product which detects pieces but does not move them automatically. Although the information given is vague, and unfortunately does not give any details as to how the detection works, it appears that the intended use is for the human player to move the pieces in to the positions show on the computer screen.
   * http://www.vandeveen.nl/Research/Electronic%20Draughts%20Board.htm appears to be a similar product with more implementation details, but unfortunately the poor resolution image and foreign language prevent us from accessing this.
   * http://www.ce.rit.edu/research/projects/2007_fall/Mechanical_Checkers/. This project by Peter Frandina, Raymond Poudrier and Christopher Rouland of the Rochester Institute of Technology very closely resembles what we are trying to achieve. Unfortunately this was not found early enough in the process to influence our design decisions, but it appears that a similar solution to that planned by ourselves, particularly to the mechanical aspect of the problem, was also used by them. One major difference is the sensing technology, where they decided to use photo sensors. We considered this idea in an early project meeting but dismissed it in favour of magnetic switches, as it would require sufficient ambient light which could be blocked by a player leaning over the board, and embedding photosensitive components in every square could end up being expensive and impractical.
+
+FACILITIES REQUIRED
+As this project will involve a large amount of mechanical/electrical engineering, we will require
+workshop facilities and the assistance of our demonstrator. As this project is intended to be
+computer science-focussed, we feel that it should not be an issue if we receive extensive support in
+this area.
+The software will be developed to run on Public Workstation Facility (PWF) machines, which are
+readily available in the Computer Laboratory and Altera DE2 teaching boards, which group
+members will still have from the ECAD & Arch labs.
+
+SPECIFICATION & ACCEPTANCE CRITERIA
+Having considered the design brief and researched the problem generally, we expect our project to
+be able to meet the following specification, which will act as the acceptance criteria for our project:
+Hardware:
+· Pieces belonging to the computer player should move with no visible mechanism.
+· No other pieces should be disturbed as pieces are moved.
+· Once the movement of a piece has started, it should reach its final destination in no longer
+than 30 seconds.
+Game play and AI:
+· The computer player should always follow the above rules of Draughts.
+· Pieces that are captured by the computer player should be automatically removed before
+the next jump / turn.
+· There should be no longer than 10 seconds between the human player declaring the end of
+their move and the computer player starting to move their piece.
+· The system should automatically detect the end of a game, and indicate the winner.
+· The human player should be able to resign the game.
+· Human player’s moves should be sensed and calculated by the computer.
+Interface:
+· There should be a facility for the human player to declare the end of their turn.
+· The computer player should indicate when it has finished its turn.
+There are also additional features that could easily be incorporated if time permitted:
+· Pieces should be crowned automatically, possibly by exchanging with a pre-crowned piece
+placed on the edge of the board at the start of the game.
+· The maximum time permitted for the AI to calculate could be user-settable as a primitive
+difficulty setting.
+· The human player should be able to specify whether they wish to play as black or white, or
+whether it should be chosen at random.
+· At the end of the game, if the captured pieces were stored at the edge of the board, the
+computer could automatically reset them to their required positions.
+SYSTEM DESIGN
+The software will be programmed in Java and run on a PWF machine. The hardware will be
+controlled by an Altera DE2 development board, programmed with Verilog. The two parts of the
+system will communicate via the serial port. For the purposes of development the system will be
+considered as three relatively independent sections, as follows:
+In order to ensure that parts of the system written by different people communicate properly, it is
+necessary to define some common standards, which are illustrated by the diagrams below.
+The diagram on the left gives an outline of the board along with an integer labelling of all the
+squares. This will probably only be required within the Control Software subsystem, but if required
+could be used within other sections for consistency.
+The main playing area will be numbered 0 to 63, which has the possible advantage that when
+written in binary, the lower three bits indicate the column and the upper three bits indicate the
+row. The board will require dead squares in which captured pieces can be placed, as well as
+squares for the pre-made black and white king pieces (labelled BK and WK respectively). These are
+numbered (slightly illogically) in a clockwise fashion, from 64-99, in order to preserve the
+aforementioned property of the playing area.
+The second diagram gives the constants that should be defined by the HWInterface class (see
+below) for the purposes of describing directions in which to move the magnet head. The
+orientation of both diagrams with respect to the black and white players is the same, (i.e. North and
+East represent increasing square numbers).
+The following specification points will also be useful for all members of the group:
+· Kings, once captured, should be returned to the BK/WK squares.
+· Nothing should be assumed about the distribution of pieces in the dead area.
+· The use of dead areas means that the number of pieces on the board should remain
+constant.
+· Dead areas will also need sensing, as it is not possible to stipulate where a human player
+may place captured pieces.
+· Pieces in dead areas may need to be reorganised in order to move pieces into them quickly.
+Therefore nothing should be assumed about their layout.
+SOFTWARE-HARDWARE INTERFACE
+The communications channel and interface classes are being considered as one subsystem in order
+to ensure that communication works seamlessly.
+The HWInterface class will fall under this heading, but is documented along with the Control
+Software for ease. It is expected that this will require Java library classes in order to communicate
+with the serial port.
+The exact protocol for communication will be left as an implementation decision, but it is thought
+that single characters will be used to represent the basic commands, and some collection of
+symbols to represent the sensor outputs.
+This section will also involve the Verilog module for receiving and decoding the signals. As it is
+likely that this code will be very implementation dependent, the interface between this and the
+hardware code will not be defined formally until the system integration stage. However, it is
+expected that this will involve changing the state of various wires corresponding to the different
+commands.
+HARDWARE AND ELECTRONICS
+At this stage it does not seem sensible to further subdivide the hardware description code into
+modules. Exactly what is required of the hardware will become more obvious when the electronics
+have been confirmed in conjunction with the demonstrator. The work can then be more easily split
+between those working on this section.
+The outline requirements of the hardware are
+· Receive signals from the SW/HW Interface and act accordingly
+· Operate the stepper motors with high precision
+· Receive inputs from the human player (such as turn over) and transmit these to the
+Interface.
+· Receive inputs from the sensors and transmit these to the Interface.
+The expected mechanical set up is as follows. A bar will move parallel to the rows of the board,
+using a system of stepper motors and either threaded rods or belts/racks. A similar system,
+operating perpendicularly and moving the electromagnetic head, will be mounted on the bar in
+order to provide the x-y movement of the magnet. The bar will also be fitted with ten reed switches
+in order to detect the presence of pieces on one row of the board at a time.
+The motors, electromagnet and reed switches will be connected to the Altera board (via any
+required circuitry such as motor drivers), and controlled by the Verilog-described hardware.
+Touch switches will be added at the extremities of the head’s motion in order to prevent control
+faults from damaging the mechanics, and also to provide a means of resetting the head to a known
+position for calibration.
+We expect that the board will need to have squares of 5-6cm across to prevent the pieces from
+magnetically attracting/repelling each other. This will be confirmed when parts have arrived from
+the suppliers and our demonstrator has had opportunity to construct further prototypes.
+Six King pieces will be created for each colour, which corresponds to doubling-up all twelve normal
+pieces.
+CONTROL SOFTWARE
+The control software will be quite heavily divided in order to allow easier allocation of work and
+better testing. The expected flow of a standard game is given in the diagram below. This will be
+controlled by the Draughts class, which will be the file containing the main method to be executed
+by the JVM.
+Initialisation of
+classes
+Decide who
+goes first (from
+input)
+AI class.
+Calculates
+computer’s turns
+Computer
+Pathing class.
+Issues commands
+to HWInterface
+Collection of Moves
+HWInterface
+class.
+Communicates
+with Altera board
+Computer
+indicates end of
+turn, waits for
+player to take turn
+and signal end of
+turn.
+Player
+Sensor class.
+Retreives piece
+positions via
+HWInterface,
+infers player
+Moves.
+Board updated
+Board updated
+No Game over?
+Valid Move?
+If no, player informed
+If yes
+Winner indicated.
+Program
+terminates
+Yes
+The interfaces between the classes and their expected behaviours are outlined in the Interface
+Definitions document
+PART IB GROUP PROJECT
+PROJECT BRAVO – MAGIC BOARD GAMES
+INTERFACE DEFINITIONS
+*MPIQIHMEHMWO-&+VSYT4VSNIGXEFWXVEGX7IRWSVNEZE 4EKISJ
+'PEWWXLEXXEOIWXLIWIRWSVSYXTYXWERHEREP]WIWMRJIVVMRKXLIQSZIWGEVVMIHSYXF]XLI
+LYQERTPE]IV
+
+ 
+ (ITIRHWSR&SEVH1SZI4MIGIERH,;-RXIVJEGI
+ (ITIRHIHSRF](VEYKLXW
+ 
+
+MQTSVXNEZEYXMP'SPPIGXMSR 
+
+ TYFPMGEFWXVEGXGPEWW7IRWSV_
+
+ 'SRWXVYGXSVVIUYMVIWRSEVKYQIRXW
+
+-RJIVWXLIQSZIWGEVVMIHSYXF]XLILYQERTPE]IVKMZIRXLIWIRWSVSYXTYXERHXLIGYVVIRX
+FSEVH
+
+ 7LSYPH238YTHEXIXLIFSEVH
+%VVE]SJFSSPIERWYWIWMRXIKIVVITVIWIRXEXMSRSJWUYEVIWWII6IUYMVIQIRXW7TIG
+ERH
+MRHMGEXIWTVIWIRGISJERIPIQIRXMRXLEXWUYEVI
+
+ TYFPMGEFWXVEGX'SPPIGXMSR 1SZI"GEPGYPEXI9WIV1SZIWFSSPIER?AWIRWSV3YX&SEVHFSEVH
+
+
+ a
+*MPIQIHMEHMWO-&+VSYT4VSNIGXEFWXVEGX4MIGINEZE 4EKISJ
+ -RXIVREPVITVIWIRXEXMSRSJETMIGISRXLIFSEVH
+ 'ERFIFPEGOSV[LMXIXLMWWLSYPHRIZIVGLERKIXLIVIJSVIRSWIXQIXLSH
+'ERFIEOMRKSVRSROMRKXLMWWLSYPHRIZIVGLERKIXLIVI[MPPFIWITEVEXI4MIGIWJSV
+/MRKW
+
+
+'ERFIEPMZISVRSX[LIVIEPMZIQIERWGYVVIRXP]MRZSPZIHMRXLIKEQIMIRSXE/MRK
+[EMXMRKXSFIFVSYKLXSRSVETMIGIXLEXLEWFIIRIPMQMREXIHJVSQXLIKEQI
+
+
+ 
+ (ITIRHWSRRSXLMRK
+(ITIRHIHSRF]QSWXSJXLIWSJX[EVIMRTEVXMGYPEV&SEVHERH1SZI 
+
+ TYFPMGEFWXVEGXGPEWW4MIGI_
+
+ 'SRWXVYGXSVWLSYPHXEOIFSSPIERMW&PEGOFSSPIERMW/MRKFSSPIERMW%PMZI
+
+ [LIVIXLIXLVIIFSSPIERWGSVVIWTSRHXSXLIMRXIVREPWXEXYWSJXLITMIGI
+
+ 6IXYVRW[LIXLIVTMIGIMW[LMXI
+ TYFPMGEFWXVEGXFSSPIERMW;LMXI
+
+
+ 6IXYVRW[LIXLIVTMIGIMWFPEGO
+ TYFPMGEFWXVEGXFSSPIERMW&PEGO
+
+
+ 6IXYVRW[LIXLIVTMIGIMWEOMRK
+ TYFPMGEFWXVEGXFSSPIERMW/MRK
+
+
+ 6IXYVRW[LIXLIVTMIGIMWEPMZI
+ TYFPMGEFWXVEGXFSSPIERMW%PMZI
+
+
+ 1EOIWXLITMIGIEPMZI
+ TYFPMGEFWXVEGXZSMHQEOI%PMZI
+
+
+ 1EOIWXLITMIGIRSXEPMZI
+ TYFPMGEFWXVEGXZSMHQEOI(IEH
+
+
+ a
+*MPIQIHMEHMWO-&+VSYT4VSNIGXEFWXVEGX4EXLMRKNEZE 4EKISJ
+ )RKMRIXLEX[SVOWSYXXLIFIWX[E]JSVXLILEVH[EVIXSQSZIEVSYRHXLIFSEVHKMZIRE1SZI
+ 7LSYPHRSXIVIUYMVIQIRXWWTIGMRTEVXMGYPEVRIIHJSVXMQMRKERHRSXHMWXYVFMRKSXLIVTMIGIW
+ 7LSYPHYWIGSRWXERXWJSVHMVIGXMSRHIJMRIHMR,;-RXIVJEGI
+ 
+ (ITIRHWLIEZMP]SR,;-RXIVJEGIWLIEH1SZIERHQEKIRIXQIXLSHW
+(ITIRHIHSRF](VEYKLXW 
+
+TYFPMGEFWXVEGXGPEWW4EXLMRK_ 
+
+ 'SRWXVYGXSVVIUYMVIWRSEVKYQIRXW
+
+8EOIWEQSZIGEPGYPEXIWXLIFIWX[E]XSGEVV]MXSYXKMZIRXLIGYVVIRXFSEVHERHQEOIW
+GEPPWXSXLILEVH[EVIMRXIVJEGI
+
+ 6IXYVRW[LIRMXLEWGSQTPIXIHXLIQSZI
+ -JMXMWRSXTSWWMFPIXSQEOIEQSZIWLSYPHRIZIVFIXLIGEWI#
+WLSYPHVIXYVRJEPWI
+ 'ERQSZI4MIGIWMRXLIHIEHWTEGIEWRIGIWWEV]
+ 7LSYPHYTHEXIXLI&SEVH
+ TYFPMGEFWXVEGXFSSPIERTVSGIWW1SZI1SZIQSZI&SEVHFSEVH
+
+
+ a
+*MPIQIHMEHMWO-&+VSYT4VSNIGXEFWXVEGX1SZINEZE 4EKISJ
+ 6ITVIWIRXWXLIQSZIQIRXSJSRITMIGIJVSQEWXEVXWUYEVIXSERIRHWUYEVI
+ 2SXRIGIWWEVMP]XLIIRXMVMX]SJEXYVREWQER]TMIGIWQE]RIIHXSFIQSZIH
+ 7LSYPHRIZIVRIIHXSEGXYEPP]GLERKITEVEQIXIVWSJQSZILIRGIRSWIXQIXLSHW
+ 
+ (ITIRHWSR4MIGI
+(ITIRHIHSRF]QSWXSJXLIWSJX[EVIWMHIMRTEVXMGYPEV&SEVH%-ERH4EXLMRK 
+
+TYFPMGEFWXVEGXGPEWW1SZI_ 
+
+ 'SRWXVYGXSVWLSYPHXEOIMRX*VSQMRX8S4MIGITMIGI
+
+ *VSQWUYEVIXSQSZIJVSQ
+ 8SWUYEVIXSQSZIXS
+ 4MIGIMRXIVREPVITVIWIRXEXMSRSJTMIGIXSFIQSZIH
+ 7II6IUYMVIQIRXW7TIGMJMGEXMSRJSVMRXIKIVVITVIWIRXEXMSRSJWUYEVIW
+
+ VIXYVRWXLI4MIGIXSFIQSZIH
+ TYFPMGEFWXVEGX4MIGIKIX4MIGI
+
+
+ 6IXYVWXLIWXEVXWUYEVISJXLIQSZI
+ TYFPMGEFWXVEGXMRXKIX*VSQ
+
+
+ 6IXYVRWXLIHIWMXREXMSRWUYEVISJXLIQSZI
+ TYFPMGEFWXVEGXMRXKIX8S
+
+ a
+*MPIQIHMEHMWO-&+VSYT4VSNIGXEFWXVEGX,;-RXIVJEGINEZE 4EKISJ
+4EVXSJXLI7SJX[EVI,EVH[EVI-RXIVJEGIXLMWGPEWWLEWQIXLSHW[LMGLGSQQYRMGEXI[MXLXLI
+LEVH[EVI
+
+ ;MPPQSWXPMOIP]YWI.EZEPMFVEVMIWJSVEGGIWWMRKXLIWIVMEPTSVX
+ 
+ (ITIRHIHSRF]QSWXSJXLITVSNIGXMRTEVXMGYPEV7IRWSVERH4EXLMRK
+(ITIRHWSRXLIGLSWIRPMFVEV]ERHXLIGSQQYRMGEXMSRWPMROEW[IPPEWXLIGSVVIWTSRHMRK
+:IVMPSKQSHYPI
+
+
+TYFPMGEFWXVEGXGPEWW,;-RXIVJEGI_ 
+
+MRX'SRWXERXW2368,2)%78)%787)%787398,7;)78;)782;)78WLSYPHFIWTIGMJMIH
+7II6IUYMVIQIRXW7TIGMJMGEXMSR
+
+
+ 'SRWXVYGXSVWLSYPHRSXRIIHXSXEOIER]EVKYQIRXW
+
+ 1SZIWLIEHMRKMZIRHMVIGXMSR9WIGSRWXERXWEWHIWGVMFIHEFSZI
+ 6IXYVRWXVYI[LIRGSQTPIXIH
+ TYFPMGEFWXVEGXFSSPIERQSZI,IEHMRXHMVIGXMSR
+
+
+ 8YVRWXLIIPIGXVSQEKRIXXSXLI3RWIXXMRK
+ 6IXYVRWXVYI[LIRGSQTPIXIH
+ TYFPMGEFWXVEGXFSSPIERQEKRIX3R
+
+
+ 8YVRWXLIIPIGXVSQEKRIXSJJ
+ 6IXYVRWXVYI[LIRGSQTPIXIH
+ TYFPMGEFWXVEGXFSSPIERQEKRIX3JJ
+
+
+ 6IXYVRWGYVVIRXWXEXYWSJQEKRIX
+ 'SYPHNYWXFIWXSVIHPSGEPP]
+ TYFPMGEFWXVEGXFSSPIERKIX1EKRIX7XEXYW
+
+
+ 6IWIXWXLIVIEHLIEHXSEORS[RWUYEVIERHYTHEXIWPSGEPWXSVEKISJXLMWZEPYI
+ 8YVRWSJJIPIGXVSQEKRIXMJSR
+ 9WIWXSYGLW[MXGLIWMRWXEPPIHXSHIXIGX[LIRLIEHMWVIEGLMRKI\XVIQMXMIWSJQSXMSR
+ 6IXYVRWXVYI[LIRHSRI
+ TYFPMGEFWXVEGXFSSPIERVIWIX,IEH
+
+
+ 6IXYVRWGYVVIRXWUYEVISJQEKRIXLIEH
+ 'SYPHNYWXWXSVIZEPYIPSGEPP]
+ 7II6IUYMVIQIRXW7TIGMJMGEXMSRJSVMRXIKIVZEPYIW
+ TYFPMGEFWXVEGXMRXKIX7UYEVI
+
+
+ 6IXYVRWEIPIQIRXEVVE]SJWIRWSVSYXTYX
+-JVIIHW[MXGLIWEVIWMKRMJMGERXP]SJJWIXJVSQQEKRIXXLIR[MPPVIUYMVIXLMWXSFIHSRISR
+XLILEVH[EVIWMHIEWQSZI,IEHQSZIQIRXW[MPPRSXGIRXIVXLIWIRWSVWSRXLIWUYEVIW
+
+3XLIV[MWIGSYPHNYWXGVIEXILIPTIVQIXLSHWXSVIEHSJJEVTEGOEKITVSNIGX&VEZSS[SJWIRWSV
+SYXTYXWERHYWIVIWIX,IEHQSZI,IEHXSGSRXVSPQSZIQIRX
+
+ %VVE]WLSYPHGSRXEMRXVYIJSVTVIWIRGISJETMIGISVJEPWISXLIV[MWI
+%VVE]OI]WLSYPHGSVVIWTSRHXSMRXIKIVVITVIWIRXEXMSRSJWUYEVIWWIIVIUYMVIQIRXW
+WTIGMJMGEXMSR
+
+ TYFPMGEFWXVEGXFSSPIER?AWIRWSV3YXTYX
+
+
+ a
+*MPIQIHMEHMWO-&+VSYT4VSNIGXEFWXVEGX(VEYKLXWNEZE 4EKISJ
+1EMRGPEWWXLEX[MPPFIVYRERHWYTTPMIHGSQQERHPMRIEVKYQIRXW 
+
+TYFPMGGPEWW(VEYKLXW_ 
+
+ TYFPMGWXEXMGZSMHQEMR7XVMRK?AEVKW
+
+ _
+ -140)1)28*03;(-%+6%1+-:)2-26)59-6)1)28774)'-*-'%8-32
+a 
+
+ a
+*MPIQIHMEHMWO-&+VSYT4VSNIGXEFWXVEGX&SEVHNEZE 4EKISJ
+ 4VSZMHIWERMRXIVREPVITVIWIRXEXMSRSJXLIFSEVH
+ 7IIMRXIKIVVITVIWIRXEXMSRSJWUYEVIWMR6IUYMVIQIRXW7TIGMJMGEXMSRJSVJYVXLIVHIXEMPW
+ 
+ (ITIRHWSR4MIGI1SZI
+ (ITIRHIHSRF]QSWXSJXLIWSJX[EVI
+ 
+
+TYFPMGEFWXVEGXGPEWW&SEVH_ 
+
+'SRWXVYGXSVXEOIWRSEVKYQIRXWEWXLIVIMWRSJIEWMFPI[E]SJTEWWMRKERMRMXMEP
+VITVIWIRXEXMSRSJEFSEVH
+
+
+ 6IXYVRWXLI4MIGIXLEXVIWMHIWMRWUYEVI
+ TYFPMGEFWXVEGX4MIGIKIXMRXWUYEVI
+
+
+ 7IXWXLIWUYEVIWTIGMJMIHXSLSPHTMIGI
+ TYFPMGEFWXVEGXZSMHWIXMRXWUYEVI4MIGITMIGI
+
+
+ 4VSGIWWXLIKMZIRQSZI
+ 9THEXITMIGIHIJMRMXMSRWJSVXLSWIQSZMRKMRSVSYXSJHIEHWTEGI
+ TYFPMGEFWXVEGXZSMHYTHEXI1SZIQSZI
+
+
+ +MZIW[LIXLIVXLI1SZIWTIGMJMIHMWZEPMHJSVXLIGYVVIRXFSEVH
+ 'SYPHFIEWWMQTPIEWVIXYVRMRKXVYIMJXLI4MIGIVIWMHIWMRXLI*VSQSJXLI1SZI
+ TYFPMGEFWXVEGXFSSPIERZEPMH1SZI1SZIQSZI
+
+
+ a
+*MPIQIHMEHMWO-&+VSYT4VSNIGXEFWXVEGX%-NEZE 4EKISJ
+ 'SRXEMRWXLI%-IRKMRIJSVTPE]MRKHVEYKLXW
+ 7LSYPHEFMHIF]EPPXLIVYPIWSJ(VEYKLXWKMZIRMRXLIVIUYMVIQIRXWWTIGMJMGEXMSR
+%VKYQIRXWXLEXGSYPHFITEWWIHMRRI\X8YVREVIMRWXIEHKMZIRMRGSRWXVYGXSVERHWLSYPHFI
+WXSVIH
+
+8LMWQEOIWERMRWXERGISJ%-FILEZIPMOIEZMVXYEPTIVWSR[LSLEWGIVXEMRGLEVEGXIVMWXMGW
+ERHMWTPE]MRKSRIWMHISRSRIFSEVH
+
+8MQIVZEPYIKMZIWQE\MQYQXMQIXLEX%-GERSTIVEXIJSV'EREGXEWETWIYHSHMJJMGYPX]
+WIXXMRKF]KMZMRKXLI%-PIWWXMQIXSXLMROXSQEOIXLIKEQIIEWMIVERHXSIRJSVGIXLI
+WTIGMJMGEXMSR
+
+ 
+ (ITIRHWSR&SEVH1SZI4MIGI
+ (ITIRHIHSRF](VEYKLXW
+ 
+
+ MQTSVXNEZEYXMP'SPPIGXMSR
+
+ TYFPMGEFWXVEGXGPEWW%-_
+
+ 'SRWXVYGXSVWLSYPHXEOI&SEVHFSEVHFSSPIERMW&PEGOMRXXMQIV
+
+ FSEVHVIJIVIRGIXS&SEVHXSTPE]SR
+ MW&PEGOMW%-TPE]MRKEWFPEGO#SV[LMXI#
+
+ XMQIVQMPPMWIGSRHVITVIWIRXEXMSRSJXMQIV
+
+ 'EPGYPEXIWXLIFIWXXYVRTSWWMFPI[MXLMRXLIVIUYMVIHXMQI
+ %XYVRMWEGSPPIGXMSRSJ1SZIWIKJSVEHSYFPINYQTF]&PEGO
+ 
+QSZIFPEGOTMIGIFI]SRHJMVWX[LMXITMIGI
+ 
+VIQSZIJMVWXGETXYVIHTMIGI
+ 
+QSZIFPEGOTMIGIXSFI]SRHWIGSRH[LMXITMIGI
+ 
+VIQSZIWIGSRHGETXYVIHTMIGI
+ TYFPMGEFWXVEGX'SPPIGXMSR 1SZI"RI\X8YVR
+
+
+ a
+PART IB GROUP PROJECT
+PROJECT BRAVO – MAGIC BOARD GAMES
+PROJECT PLAN
+TEAM ROLES
+It was decided at the inaugural project meeting that Richard Leivers would act as project
+management. Andrew Kindness will take minutes at client review meetings. For the initial
+planning stages of the project it was decided that the group would meet semi-formally two or three
+times a week up until the production of this document and the Requirements Specification.
+IMPLEMENTATION
+The tasks were divided according to the separate parts of the system identified in the Requirements
+Specification. They will be implemented according to the interfaces defined in that document and
+the provided Java abstract classes. A team meeting will be held during the week commencing 2nd
+February in order to report progress and any potential problems and to discuss any changes to the
+agreed specification and interfaces that may be required.
+The team members responsible for implementing and testing the various parts of the project are as
+follows:
+· Control Software: Ximin Luo, Andrew Kindness and Guo Zheng
+o Andrew will be responsible for implementing the AI class. This is to be submitted to
+Guo for testing (see below).
+o Guo will be responsible for implementing the Pathing class. This is to be submitted
+to Andrew for testing (see below).
+o Ximin will prepare the remaining classes in this sub-system, including Draughts,
+Board, Piece, Move and MoveSensor. As these components are either simple or
+heavily dependent on other modules, they will be tested most extensively in the
+Integration stage. Ximin will also assist Richard Lloyd in testing the Software-
+Hardware Interface.
+· Software-Hardware Interface: Richard Lloyd
+o Richard has been designated as responsible for researching and implementing the
+communication between the software and hardware components of the system.
+· Hardware and Electronics: Janus China and Richard Leivers
+o Janus and Richard will be responsible for building, with the assistance of the
+demonstrator, the electronic and mechanical components of the system. Once this
+has been confirmed they will divide the hardware description coding and devise a
+test strategy.
+MODULE TESTING
+All parts of the system are to be completed by Friday 6th February. There will be a testing session
+on the weekend of 7th/8th February which will be attended by all group members. The testing will
+be carried out by the people outlined above with bug reports submitted to the module writer
+straight away so that repairs can be made and testing can continue. Reports of the implementation
+testing will be submitted by the relevant persons to the project manager by the end of 8th February
+in order to be included in the progress report for the second client meeting.
+SYSTEM INTEGRATION AND TESTING
+The strategy for integration and testing will be devised, in conjunction with the group, ready for the
+second client meeting. A significant portion of the budget has been reserved for this purpose. We
+feel, however, that it would be premature to plan this in any additional detail now, when much
+better judgements can be made when the results of module testing are known.
+It is expected that integration and testing will first happen as part of the three sub-systems, which
+when fully tested can then be integrated together to form the finished system.
+TIME MANAGEMENT
+The total budget for the project is 60 hours per team member. This will be managed by firstly
+estimating the amount of time that various stages of the project will require, in order to distribute
+tasks fairly. Group members will also record the time they spend on the various parts of the project
+so that the remainder of the project can be budgeted accordingly.
+A Time Plan covering the planned time usage for the first stages of the project is attached. Due to
+the inconvenient dimensions, this document is intended for electronic viewing.
