@@ -1,6 +1,6 @@
 package bravo.game;
 
-// A class which deals with the turn logic. Also runnable as a standalone program
+// A class which deals with the turn logic. Also runnable as a standalone program.
 
 import bravo.io.HWInterface;
 import bravo.game.Board.*;
@@ -64,19 +64,30 @@ public class Draughts {
 
 
 	public static void main(String[] args) {
-		testSuite();
 
-		HWInterface h = (args.length == 0)? new HWInterface("/dev/ttyS0", 115200): new DummyHWInterface(args);
+		try {
+			HWInterface h = (args.length == 0)? new HWInterface("/dev/ttyS0", 115200):
+			                (args[0].equals("terminal"))? new DummyHWInterface():
+			                (args[0].equals("stdin"))? new HWInterface("", -1):
+			                new HWInterface(args[0], 115200);
 
-		for (;;) {
-			int gameopts = h.gameStart();
-			Player b = makePlayer((gameopts>>3) & 0x07);
-			Player w = makePlayer(gameopts & 0x07);
+			for (;;) {
+				int gameopts = h.gameStart();
+				Player b = makePlayer((gameopts>>3) & 0x07);
+				Player w = makePlayer(gameopts & 0x07);
 
-			Draughts game = new Draughts(h, b, w);
-			if (h instanceof DummyHWInterface) { ((DummyHWInterface)h).setGame(game); }
+				Draughts game = new Draughts(h, b, w);
+				if (h instanceof DummyHWInterface) { ((DummyHWInterface)h).setGame(game); }
 
-			game.handleWinner(game.play());
+				game.handleWinner(game.play());
+			}
+
+		} catch (Exception e) {
+			System.err.println("Usage: Draughts [DEVICE]");
+			System.err.println("DEVICE must be a serial port (default: /dev/ttyS0), or a special value listed below.");
+			System.err.println("terminal    - Play on the terminal.");
+			System.err.println("stdin       - Use stdin as a virtual serial port.");
+			System.exit(2);
 		}
 
 	}
@@ -88,7 +99,7 @@ public class Draughts {
 			(opt&1) != 0? new AIPlayer(3): new HumanPlayer();
 	}
 
-	public static void printByteArray(String t, byte[] bs) {
+	/*public static void printByteArray(String t, byte[] bs) {
 		System.err.print(t + ": [ ");
 		for (byte b: bs) { System.err.printf("0x%02x ",b); }
 		System.err.println("]");
@@ -97,50 +108,12 @@ public class Draughts {
 		System.err.print(t + ": [ ");
 		for (Object b: bs) { System.err.printf("0x%02x ",((Byte)b).byteValue()); }
 		System.err.println("]");
-	}
-
-	public static void testSuite() {
-
-		int[] test = null;
-		/*byte b = -1;
-		System.out.println(b & Board.B);
-		System.out.println(b);
-		/*
-		byte b = (byte) 0xFF;
-		System.out.printf("0x%x\n", b);
-		b = -1;
-		System.out.printf("0x%x\n", b);
-		b += 2;
-		System.out.printf("0x%x\n", b);
-		System.out.printf("0x%x\n", 1<<2|1);
-		System.out.printf("0x%x\n", 3+5 >> 2);
-		System.out.print(GameBoard);
-		System.out.println("Available Moves:");
-		java.util.HashSet<Turn> ts = GameBoard.getValidTurns();
-		for (Turn t : ts) {
-			System.out.println(t);
-		}
-		System.out.println(ts.contains(new Turn((byte)0x13, (byte)0x13, new byte[]{0x24, 0x44, 0x42, 0x22})));
-		System.out.println(ts.contains(new Turn((byte)0x13, (byte)0x13, new byte[]{0x22, 0x44, 0x42, 0x24})));
-		System.out.println(ts.contains(new Turn((byte)0x13, (byte)0x15, new byte[]{0x24, 0x44, 0x42, 0x22})));
-		*/
-	}
+	}*/
 
 	public static class DummyHWInterface extends HWInterface {
 
-		int opt = -1;
-		public DummyHWInterface(String[] args) {
-			super("/dev/ttyS0", 115200);
-			try {
-				int o = 0;
-				o |= args[0].charAt(0) == 'H'? 0: 1 << (Byte.parseByte(args[0].substring(0,1))-1);
-				o <<= 3;
-				o |= args[0].charAt(1) == 'H'? 0: 1 << (Byte.parseByte(args[0].substring(1,2))-1);
-				opt = o;
-			} catch (Exception e) {
-				System.err.println("Usage: Draughts [black][white]");
-				System.err.println("H means a human player; a number means an AI player with that toughness (1=easy,2,3=hard).");
-			}
+		public DummyHWInterface() throws Exception {
+			super("", -1);
 		}
 
 		Draughts game;
@@ -150,21 +123,20 @@ public class Draughts {
 		public void setDummyState(boolean[] s) { skel = s; }
 
 		public int gameStart() {
-			if (opt > 0) { int o = opt; opt = -1; return o; }
 			for (;;) {
 				try {
 					byte[] in = new byte[8192];
 					System.err.print("enter the game parameters [black][white], or nothing to exit: ");
 					int s = System.in.read(in);
 					if (s < 2) { System.exit(0); }
-					int b = in[0] == 'H'? 0: 1 << (Byte.parseByte(new String(in, 0, 1))-1);
-					int w = in[1] == 'H'? 0: 1 << (Byte.parseByte(new String(in, 1, 1))-1);
+					int b = in[0] == 'H' || in[0] == 'h'? 0: 1 << (Byte.parseByte(new String(in, 0, 1))-1);
+					int w = in[1] == 'H' || in[1] == 'h'? 0: 1 << (Byte.parseByte(new String(in, 1, 1))-1);
 					return (b<<3|w);
 				} catch (java.io.IOException e) {
 					System.exit(1);
 				} catch (NumberFormatException e) {
 					System.err.println("Usage: [black][white]");
-					System.err.println("H means a human player; a number means an AI player with that toughness (1=easy,2,3=hard).");
+					System.err.println("H for a human player; a number for an AI player with that toughness (easy:1,2,3:hard).");
 				}
 			}
 		}
@@ -176,45 +148,12 @@ public class Draughts {
 			case DRAW: System.out.println("draw"); return;
 			}
 		}
-		public boolean[] scan() {
-
-/*
-		int[] c = {8, 0, 1, 2, 3, 4, 5, 6, 7, 9};
-		String cellsep = "+---+---+---+---+---+---+---+---+---+---+\n";
-		String rowsep = "+   +---+---+---+---+---+---+---+---+   +\n";
-
-		StringBuffer out = new StringBuffer();
-		out.append(cellsep);
-
-		int x, y;
-		char ch;
-		for (int i=c.length-1; i>=0; --i) {
-			y = c[i];
-			out.append("|");
-
-			for (int j=0; j<c.length; ++j) {
-				x = c[j];
-				ch = skel[y<<4|x]?'.':' ';
-				out.append(" ").append(ch).append(y<8||x==9?" |":"  ");
-
-			}
-			out.append(" ").append(y).append("\n").append(y==8?cellsep:rowsep);
-
-		}
-		out.append("  8   0   1   2   3   4   5   6   7   9 x\\y\n");
-*/
-		//System.out.println(out.toString());
-
-			//try {Thread.sleep(200);} catch (InterruptedException e) {}
-
-
-			return skel;
-		}
+		public boolean[] scan() { return skel; }
 		public EndTurn proceed(BoardState bstate) {
 			boolean[] skel;
 			try {
 				byte[] in = new byte[8192];
-				System.err.print("enter the move, or nothing for random: ");
+				System.out.print("enter the move (yx yx), or nothing for random: ");
 				int s = System.in.read(in);
 				int srcy = Byte.parseByte(new String(in, 0, 1), 16);
 				int srcx = Byte.parseByte(new String(in, 1, 1), 16);
@@ -232,9 +171,8 @@ public class Draughts {
 		}
 		public void moveHead(int direction) {}
 		public void magnetSwitch(boolean power) {}
-		public void reset() {
-			setDummyState(game.board.getStateSkel());
-		}
+		public void reset() { setDummyState(game.board.getStateSkel()); }
+		public void offset_h() { }
 
 		java.util.Random rdx = new java.util.Random();
 		private boolean[] doRandomTurn() {
@@ -249,8 +187,6 @@ public class Draughts {
 			}
 			return game.board.getStateSkel(k.src, k.dst);
 		}
-
-
 
 	}
 

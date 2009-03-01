@@ -25,7 +25,6 @@ public class Board {
 	final static byte NONE = -0x01; // 0xFF
 	final static int B = 0x00FF; // unsigned byte mask, for indexing into array[256]s
 	// i know this is a dirty hack. byte me. java sucks balls.
-	// i'm not fucking using shorts when bytes will suffice.
 
 	final static byte[][] RES = new byte[][]{
 		new byte[]{-0x70, -0x69, -0x68, -0x67, 0x78, 0x79, 0x68, 0x69, 0x58, 0x59, 0x48, 0x49}, // BN
@@ -49,11 +48,9 @@ public class Board {
 
 		// starting pieces
 		byte[] white = {0x77, 0x75, 0x73, 0x71, 0x66, 0x64, 0x62, 0x60, 0x57, 0x55, 0x53, 0x51,
-			-0x7F, -0x7E, -0x7D, -0x7C, -0x7B, -0x7A};
-			// 0x81, 0x82, 0x83, 0x84, 0x85, 0x86};
+			-0x7F, -0x7E, -0x7D, -0x7C, -0x7B, -0x7A}; // 0x81, 0x82, 0x83, 0x84, 0x85, 0x86
 		byte[] black = {0x00, 0x02, 0x04, 0x06, 0x11, 0x13, 0x15, 0x17, 0x20, 0x22, 0x24, 0x26,
-			-0x6F, -0x6E, -0x6D, -0x6C, -0x6B, -0x6A};
-			// 0x91, 0x92, 0x93, 0x94, 0x95, 0x96};
+			-0x6F, -0x6E, -0x6D, -0x6C, -0x6B, -0x6A}; // 0x91, 0x92, 0x93, 0x94, 0x95, 0x96
 		for (int i=0; i<18; ++i) {
 			cell[black[i]&B] = new Piece(false, !inPlay(black[i]), black[i]);
 			cell[white[i]&B] = new Piece(true, !inPlay(white[i]), white[i]);
@@ -63,7 +60,7 @@ public class Board {
 		//cell[0x15] = new Piece(true, true, (byte)0x15);
 
 		setValidTurns();
-		System.err.print(this);
+		System.out.print(this);
 	}
 
 	private Board(boolean empty) { }
@@ -715,7 +712,7 @@ public class Board {
 			updateBoard(pc, skel);
 			return BoardState.NORMAL;
 		} catch (BoardStateError b) {
-			//System.err.println("BoardStateError: " + b.boardState);
+			System.out.println("Board Error: " + b.boardState);
 			return b.boardState;
 		}
 	}
@@ -737,7 +734,7 @@ public class Board {
 	// executes pending changes
 	private Board updateBoard(PendingChanges pc, boolean[] skel) {
 		Turn t;
-		System.err.println(t = pc.turn);
+		System.out.println(t = pc.turn);
 		assert(vt.contains(t));
 
 		turnsDullFor = (t.capt.length > 1 || !cell[t.src&B].king && levelUp(t.dst))? 0: turnsDullFor + 1;
@@ -746,7 +743,7 @@ public class Board {
 
 		who = !who;
 		setValidTurns();
-		System.err.print(this);
+		System.out.print(this);
 		//System.err.println("avail moves:"); for (Turn t : vt) { System.err.println(t); }
 		return this;
 	}

@@ -3,9 +3,6 @@
 // Arguments that could be passed in nextTurn are instead given in constructor and should be stored.
 // This makes an instance of AI behave like a 'virtual person' who has certain characteristics and is playing one side on one board.
 // Timer value gives maximum time that AI can operate for.  Can act as a pseudo difficulty setting by giving the AI less time to think to make the game easier, and to enforce the specification.
-//
-// Depends on Board, Move, Piece
-// Depended on by Draughts
 
 package bravo.game;
 
@@ -56,10 +53,9 @@ public class AIPlayer extends Player{
 
 		for (Turn t: b.getValidTurns())
 		{
-			System.err.print(t + ", score: ");
+			System.out.print(t + ", score: ");
 			double s = scoreForTree(b.nextState(t), depth-1, " |");
-			// System.err.print(t + ", score: ");
-			System.err.printf("%.4f", 1.0-s);
+			System.out.printf("%.4f", 1.0-s);
 
 			if (turn == null) { turn = t; lowest = s; c = 1; }
 			else if (s-lowest < Double.MIN_VALUE && lowest-s < Double.MIN_VALUE) {
@@ -67,7 +63,7 @@ public class AIPlayer extends Player{
 				if (rdx.nextInt(++c) == 0) { turn = t; }
 			} else if (s < lowest) { turn = t; lowest = s; c = 1; }
 
-			System.err.print((turn == null)? "\r": " | " + turn + "\r");
+			System.out.print((turn == null)? "\r": " | " + turn + "\r");
 			if (lowest < -Double.MIN_VALUE) { break; } // optimisation
 			// must NOT break when == 0, since calculation of deeper trees may reveal preceding trees with score=0
 			// which may result in an infinite loop or a slower winning move
@@ -84,7 +80,7 @@ public class AIPlayer extends Player{
 			case NORMAL:
 			case NO_CHANGES:
 				Turn bestTurn = bestTree(game.board, tough);
-				System.err.println("");
+				System.out.println("");
 				game.board.executePhysical(bestTurn);
 				break;
 			default:
