@@ -25,33 +25,43 @@ public class Pathing
 For each element, 0 represents an empty square, 1 represents the seuare in the path,
 2 represents an occupied square and 3represents the distination square of a move.
 */
+    final static int B = 0x00FF;
+    final static byte NE_C=-0x67, NE_S=0x79, NE_W=-0x69;
+    final static byte SW_C=-0x78, SW_N=0x08, SW_E=-0x80;
+//Some parametres for the corner cases.
     private HWInterface hwi;
     private int previousX=0;
     private int previousY=0;
+//Current position of the electromagnet head after the previous move.
 
     public Pathing(HWInterface hwi)
     {
         this.hwi=hwi;
     }
 
-    final static int B = 0x00FF;
-    final static byte NE_C=-0x67, NE_S=0x79, NE_W=-0x69;
-    final static byte SW_C=-0x78, SW_N=0x08, SW_E=-0x80;
-
     public void path(Move move, boolean[] skel)
     {
-        // fix corner cases
-        if (move.dst == NE_C && !skel[NE_C&B]) {
-            if (skel[NE_S&B] && skel[NE_W&B] && move.src != NE_S && move.src != NE_W) {
+        if (move.dst == NE_C && !skel[NE_C&B]) 
+//To move a captured piece to the northeast corner.
+        {
+            if (skel[NE_S&B] && skel[NE_W&B] && move.src != NE_S && move.src != NE_W)
+            {
                 path(new Move(NE_S, NE_C), skel);
                 move = new Move(move.src, NE_S);
+//If the square next to the northeast corner is occupied, move that piece to the corner first
+//then move the captured piece to this corner.
             }
-	} else if (move.dst == SW_C && !skel[SW_C&B]) {
-            if (skel[SW_N&B] && skel[SW_E&B] && move.src != SW_N && move.src != SW_E) {
+	    }
+        else if (move.dst == SW_C && !skel[SW_C&B])
+//To move a captured piece to the southwest corner.
+        {
+            if (skel[SW_N&B] && skel[SW_E&B] && move.src != SW_N && move.src != SW_E)
+            {
                 path(new Move(SW_N, SW_C), skel);
                 move = new Move(move.src, SW_N);
             }
-	}
+//Same principle as the case above.
+	    }
         int[] p1=pathWithMagnetOff(move);
         for(int i=0;i<p1.length;i++)
            hwi.moveHead(p1[i]);
@@ -74,7 +84,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         previousX=0;
         previousY=0;
     }
- //Set the magnetic head back to the starting position.
+//Set the magnetic head back to the starting position.
     
     private int[] pathWithMagnetOff(Move move)
     {
@@ -88,6 +98,7 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
             else if(nextX<previousX&&nextY>previousY) {previousX--;previousY++;path.addElement(3);}
             else {previousX--;previousY--;path.addElement(1);}
         }
+//Move diagonally first towards the next piecel.
         while(nextX!=previousX)
         {
             if(nextX>previousX) {previousX++;path.addElement(6);}
@@ -106,16 +117,12 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
         }
         return p;
     }
+//This method generates a route to move the electromagnetic head to the piece to be moved. As
+//the magnet is off, there is no need to avoid other pieces on the board.
 
     private int[] pathWithMagnetOn(Move move, boolean[] skel)
     {
             int[][]board=setBoard(move, skel);
-            for(int i=0;i<board.length;i++)
-            {
-                for(int j=0;j<board[i].length;j++)
-                    System.out.print(board[i][j]+" ");
-                System.out.println();
-            }
             int startX=xcoordinate(move.src);
             int startY=ycoordinate(move.src);
             int endX=xcoordinate(move.dst);
@@ -186,12 +193,12 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
            |   |
            BOTTOM
 */
-
      
      private int distance(int currentX, int currentY, int endX, int endY)
      {
          return Math.abs(endX-currentX)+Math.abs(endY-currentY);
      }
+//The number of squares between the current square and the end square.
 
      private int[][] copyBoard(int[][]board)
      {
@@ -213,22 +220,30 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
          distances[5]=currentX+1<=9&&board[currentX+1][currentY]==0?distance(currentX+1,currentY,endX,endY):20;
          distances[6]=currentX+1<=9&&currentY-1>=0&&board[currentX+1][currentY-1]==0?distance(currentX+1,currentY-1,endX,endY):20;
          distances[7]=currentY-1>=0&&board[currentX][currentY-1]==0?distance(currentX,currentY-1,endX,endY):20;
+//The distances from the squares adjacent to the current square to the end square.
          int direction=0;
          for(int i=0;i<distances.length;i++)
          if(distances[i]<distances[direction]) direction=i;
+//the shortest distance from the next square to the end square.
          direction=distances[direction]<20?direction:-1;
+//If all the distances are 20, the path is blocked and no valid route can be found.
+         if(direction==-1) return null;
+//Return null if no valid path is possible.
          int[] nextSquares=new int[8];
-         if(direction==-1) return nextSquares;
          int minimumDistance=distances[direction];
          for(int i=0;i<distances.length;i++)
              if(distances[i]==minimumDistance) nextSquares[i]=1;
+//All the adjacent squares that provides a shorter route in the next step are marked as 1.
          return nextSquares;
      }
+//This method tests all 8 squares anound the current square and decides which of them provides the shortest
+//route to the end square in the next step.
 
      private void bestPath(int currentX, int currentY, int endX, int endY, int[][] board, Vector path, Vector paths)
      {
          int isPathComplete=isEndReached(board,currentX,currentY);
          if(isPathComplete>0) {path.add(isPathComplete);paths.add(path);}
+//If the end square can be reached in the next step, store the direction and store the path.
          else
          {
              int[] direction=bestDirection(currentX, currentY, endX, endY, board);
@@ -296,12 +311,15 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
                  b[currentX][currentY-1]=1;
                  bestPath(currentX,currentY-1,endX,endY,b,p,paths);
              }
+//The squares that provides shortest route in the next step are listed and recursion are
+//carried on from these squares.
          }
      }
 
     private int[] bestRoute(Vector v)
     {
          if(v.size()==0) return null;
+//Return null if no route available.
          else
          {
              Vector path=(Vector)v.elementAt(0);
@@ -312,45 +330,17 @@ For each element, 0 represents an empty square, 1 represents the seuare in the p
                  int m=p.size();
                  if(m<n){path=p;n=m;}
              }
+//Pick up the route with the minimum number of directions
              int[] c=new int[path.size()];
              for(int i=0;i<path.size();i++)
              {
                  Integer a=(Integer)path.elementAt(i);
                  c[i]=a.intValue();
              }
+//Return the route as an integer array.
              return c;
          }
     }
-
-  /*   public static void main(String[] args)
-    {
-        HWInterface hwi=new HWInterface("COM3",115200);
-        Pathing p=new Pathing(hwi);
-        boolean[] board=new boolean[256];
-        for(int i=0;i<board.length;i++)
-            board[i]=false;
-        board[144]=true;
-        board[145]=true;
-        board[146]=true;
-        board[147]=true;
-        board[148]=true;
-        board[149]=true;
-        board[150]=true;
-        board[151]=true;
-        board[96]=true;
-        board[98]=true;
-        board[100]=true;
-        board[102]=true;
-        board[105]=true;
-        board[115]=true;
-        board[117]=true;
-        board[119]=true;
-        Move m=new Move((byte)113,(byte)153);
-        int[] path=p.pathWithMagnetOn(m, board);
-        for(int i=0;i<path.length;i++)
-            System.out.print(path[i]+" ");
-        System.out.println();
-    }*/
-//Some tests. Have this removed when implementing it.
+//This method takes a series of routes and find the shortest amoung all. If multiple shortest
+//routes are available it just pick the first one.
 }
-
