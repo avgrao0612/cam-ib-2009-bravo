@@ -36,69 +36,35 @@ There are a few websites giving examples of projects and products similar to thi
   * http://www.ce.rit.edu/research/projects/2007_fall/Mechanical_Checkers/. This project by Peter Frandina, Raymond Poudrier and Christopher Rouland of the Rochester Institute of Technology very closely resembles what we are trying to achieve. Unfortunately this was not found early enough in the process to influence our design decisions, but it appears that a similar solution to that planned by ourselves, particularly to the mechanical aspect of the problem, was also used by them. One major difference is the sensing technology, where they decided to use photo sensors. We considered this idea in an early project meeting but dismissed it in favour of magnetic switches, as it would require sufficient ambient light which could be blocked by a player leaning over the board, and embedding photosensitive components in every square could end up being expensive and impractical.
 
 = FACILITIES REQUIRED =
-As this project will involve a large amount of mechanical/electrical engineering, we will require
-workshop facilities and the assistance of our demonstrator. As this project is intended to be
-computer science-focussed, we feel that it should not be an issue if we receive extensive support in
-this area.
-The software will be developed to run on Public Workstation Facility (PWF) machines, which are
-readily available in the Computer Laboratory and Altera DE2 teaching boards, which group
-members will still have from the ECAD & Arch labs.
+
+As this project will involve a large amount of mechanical/electrical engineering, we will require workshop facilities and the assistance of our demonstrator. As this project is intended to be computer science-focussed, we feel that it should not be an issue if we receive extensive support in this area.
+
+The software will be developed to run on Public Workstation Facility (PWF) machines, which are readily available in the Computer Laboratory and Altera DE2 teaching boards, which group members will still have from the ECAD & Arch labs.
 
 = SPECIFICATION & ACCEPTANCE CRITERIA =
-Having considered the design brief and researched the problem generally, we expect our project to
-be able to meet the following specification, which will act as the acceptance criteria for our project:
+
+Having considered the design brief and researched the problem generally, we expect our project to be able to meet the following specification, which will act as the acceptance criteria for our project:
+
 Hardware:
-· Pieces belonging to the computer player should move with no visible mechanism.
-· No other pieces should be disturbed as pieces are moved.
-· Once the movement of a piece has started, it should reach its final destination in no longer
-than 30 seconds.
+  * Pieces belonging to the computer player should move with no visible mechanism.
+  * No other pieces should be disturbed as pieces are moved.
+  * Once the movement of a piece has started, it should reach its final destination in no longer than 30 seconds.
+
 Game play and AI:
-· The computer player should always follow the above rules of Draughts.
-· Pieces that are captured by the computer player should be automatically removed before
+  * The computer player should always follow the above rules of Draughts.
+  * Pieces that are captured by the computer player should be automatically removed before
 the next jump / turn.
-· There should be no longer than 10 seconds between the human player declaring the end of
-their move and the computer player starting to move their piece.
-· The system should automatically detect the end of a game, and indicate the winner.
-· The human player should be able to resign the game.
-· Human player’s moves should be sensed and calculated by the computer.
+  * There should be no longer than 10 seconds between the human player declaring the end of their move and the computer player starting to move their piece.
+  * The system should automatically detect the end of a game, and indicate the winner.
+  * The human player should be able to resign the game.
+  * Human player’s moves should be sensed and calculated by the computer.
+
 Interface:
-· There should be a facility for the human player to declare the end of their turn.
-· The computer player should indicate when it has finished its turn.
+  * There should be a facility for the human player to declare the end of their turn.
+  * The computer player should indicate when it has finished its turn.
+
 There are also additional features that could easily be incorporated if time permitted:
-· Pieces should be crowned automatically, possibly by exchanging with a pre-crowned piece
-placed on the edge of the board at the start of the game.
-· The maximum time permitted for the AI to calculate could be user-settable as a primitive
-difficulty setting.
-· The human player should be able to specify whether they wish to play as black or white, or
-whether it should be chosen at random.
-· At the end of the game, if the captured pieces were stored at the edge of the board, the
-computer could automatically reset them to their required positions.
-SYSTEM DESIGN
-The software will be programmed in Java and run on a PWF machine. The hardware will be
-controlled by an Altera DE2 development board, programmed with Verilog. The two parts of the
-system will communicate via the serial port. For the purposes of development the system will be
-considered as three relatively independent sections, as follows:
-In order to ensure that parts of the system written by different people communicate properly, it is
-necessary to define some common standards, which are illustrated by the diagrams below.
-The diagram on the left gives an outline of the board along with an integer labelling of all the
-squares. This will probably only be required within the Control Software subsystem, but if required
-could be used within other sections for consistency.
-The main playing area will be numbered 0 to 63, which has the possible advantage that when
-written in binary, the lower three bits indicate the column and the upper three bits indicate the
-row. The board will require dead squares in which captured pieces can be placed, as well as
-squares for the pre-made black and white king pieces (labelled BK and WK respectively). These are
-numbered (slightly illogically) in a clockwise fashion, from 64-99, in order to preserve the
-aforementioned property of the playing area.
-The second diagram gives the constants that should be defined by the HWInterface class (see
-below) for the purposes of describing directions in which to move the magnet head. The
-orientation of both diagrams with respect to the black and white players is the same, (i.e. North and
-East represent increasing square numbers).
-The following specification points will also be useful for all members of the group:
-· Kings, once captured, should be returned to the BK/WK squares.
-· Nothing should be assumed about the distribution of pieces in the dead area.
-· The use of dead areas means that the number of pieces on the board should remain
-constant.
-· Dead areas will also need sensing, as it is not possible to stipulate where a human player
-may place captured pieces.
-· Pieces in dead areas may need to be reorganised in order to move pieces into them quickly.
-Therefore nothing should be assumed about their layout.
+  * Pieces should be crowned automatically, possibly by exchanging with a pre-crowned piece placed on the edge of the board at the start of the game.
+  * The maximum time permitted for the AI to calculate could be user-settable as a primitive difficulty setting.
+  * The human player should be able to specify whether they wish to play as black or white, or whether it should be chosen at random.
+  * At the end of the game, if the captured pieces were stored at the edge of the board, the computer could automatically reset them to their required positions.
