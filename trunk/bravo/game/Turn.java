@@ -1,10 +1,10 @@
 package bravo.game;
 
 import java.util.Arrays;
+
 // Internal representation of a turn by a player
 
 public class Turn {
-
 
 	final byte src, dst;
 	final byte[] capt;
@@ -30,11 +30,6 @@ public class Turn {
 			c[i] = (byte)(capt[i] - c[i-1] + capt[i]);
 		}
 		return c;
-	}
-
-	// turn this into Move objects
-	public Move[] toMove() {
-		return new Move[0];
 	}
 
 	// description of the turn

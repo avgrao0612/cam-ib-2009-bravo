@@ -35,8 +35,18 @@ public class HWInterface
      private InputStream is;
      private OutputStream os;
 
-     public HWInterface(String portName,int baudRate)
+     public HWInterface(String portName,int baudRate) throws Exception
      {
+         if (baudRate < 0) {
+             try {
+                 is=System.in;
+                 os=new FileOutputStream("/dev/null");
+             } catch (Exception ee) {
+                 System.exit(1);
+             }
+             return;
+         }
+
          try
          {
              CommPortIdentifier cpi=CommPortIdentifier.getPortIdentifier(portName);
@@ -44,19 +54,12 @@ public class HWInterface
              port.setSerialPortParams(baudRate,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
              is=port.getInputStream();
              os=port.getOutputStream();
-             //throw new Exception("force testing through stdin");
          }
          catch(Exception e)
          {
              System.out.print("Initialisation error has occured: ");
              System.err.println(e);
-             System.out.println("Using stdin instead. ");
-             try {
-                 is=System.in;
-                 os=new FileOutputStream("/dev/null");
-             } catch (Exception ee) {
-                 System.exit(1);
-             }
+             throw e;
          }
      }
 //The name of the serial port needs to be identified before run this code.
@@ -233,7 +236,7 @@ public class HWInterface
          data[0]=signal;
          try
          {
-             System.out.println("TX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
+             System.err.println("TX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
              os.write(data);
          }
          catch(Exception e)
@@ -256,10 +259,10 @@ public class HWInterface
                  for(int i=0;i<validSignal.length;i++)
                     if(data[0]==validSignal[i])
                     {
-                        System.out.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
+                        System.err.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                     }
-                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
+                     else { System.err.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
              }
          }
          catch(Exception e)
@@ -284,10 +287,10 @@ public class HWInterface
                  int byteNumber=is.read(data);
                  if (byteNumber<1) continue;
                  if((data[0]&checker^signalType)==0) {
-                        System.out.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
+                        System.err.println("             RX " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0'));
                         return data[0];
                  }
-                     else { System.out.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
+                     else { System.err.println("             rx " + String.format("%1$#8s", Integer.toString(data[0]&0xff, 2)).replace(' ','0')); }
              }
          }
          catch(Exception e)

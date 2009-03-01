@@ -1,3 +1,4 @@
 #!/bin/sh
-if [ -n "$1" ]; then javac -classpath ../RXTXcomm.jar bravo/*/*.java; fi
-java -classpath ".:../RXTXcomm.jar" -Djava.library.path=.. bravo.game.Draughts
+if [ "$1" = "-c" ]; then javac -classpath ../RXTXcomm.jar bravo/*/*.java; if [ $? -ne 0 ]; then exit; fi; shift; fi;
+if [ "$1" = "stdin" ]; then ./unod | java -classpath ".:../RXTXcomm.jar" -Djava.library.path=.. bravo.game.Draughts "$@";
+else java -classpath ".:../RXTXcomm.jar" -Djava.library.path=.. bravo.game.Draughts "$@"; fi
