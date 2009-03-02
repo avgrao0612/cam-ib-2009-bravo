@@ -1,14 +1,18 @@
 
+/*
+This module takes an 8-bit input stream and sends it through the serial port. The code
+was found at fpga4fun.com in the RS-232 interface section.
+*/
+
 // RS-232 TX module
 // (c) fpga4fun.com KNJN LLC - 2003, 2004, 2005, 2006
 
 //`define DEBUG   // in DEBUG mode, we output one bit per clock cycle (useful for faster simulations)
 
-module async_transmitter(clk, TxD_start, TxD_data, TxD, TxD_busy, LEDG);
+module async_transmitter(clk, TxD_start, TxD_data, TxD, TxD_busy);
 input clk, TxD_start;
 input [7:0] TxD_data;
 output TxD, TxD_busy;
-output [7:0] LEDG;
 
 assign LEDG = TxD_data;
 

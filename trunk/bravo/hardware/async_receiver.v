@@ -1,4 +1,10 @@
 
+/*
+This module receives data through the serial port and converts it to an
+8-bit data stream. The code was found at fpga4fun.com in the RS-232
+interface section.
+*/
+
 // RS-232 RX module
 // (c) fpga4fun.com KNJN LLC - 2003, 2004, 2005, 2006
 
@@ -7,6 +13,7 @@ input clk, RxD;
 output RxD_data_ready;  // onc clock pulse when RxD_data is valid
 output [7:0] RxD_data;
 
+// defines the clock speed and baud rate we want to send the data with
 parameter ClkFrequency = 50000000; // 25MHz
 parameter Baud = 115200;
 
