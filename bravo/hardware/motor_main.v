@@ -1,39 +1,29 @@
 
-// This module creates two instances of the motorControl
-// module, one for the main motor driving the bar and
-// one for the motor controlling the electromagnet. It
-// activates these motors based on signals from the Java
-// interface.
-// 
-// Input: It is assumed that there will be 8 wires (or
-// equivalent) to signal the direction that the motors
-// should go (north, south, etc). These should pulse high
-// once for the desired direction and then stay low until
-// the 'done' signal is sent from this module. Then the
-// next direction signal may be sent.
-//
-// Output: The module outputs signals to GPIO_1 which
-// controls the motors' movements. Also, there is a 'done'
-// signal that will be pulsed high when a move has been
-// completed.
-//
-// Parameters: can be controlled via the defines.v file.
-// These include pin numbers for motor control, speed of the
-// motor, and the number of motor steps required to move in
-// a certain direction.
-//
-// Note: for testing purposes, the direction input wires
-// from the Java interface have instead been connected to
-// the SW switches on the altera board. (see comments
-// in the code below for where to change)
-//
-// To do: the parameters in defines.v have been more or less 
-// arbitrarily chosen at the moment (except for the 'main' pins).
-// These values will depend on the size of the physical board.
+/*
+This module creates two instances of the motor_control module, one for the 
+main motor driving the bar and one for the motor controlling the electromagnet.
+It activates these motors based on signals from Java.
+
+Input: There is an 8-bit input to signal the direction that the motors should go
+(north, south, etc) for a normal move. There is also seperate inputs for a scan 
+offset move (to align the sensors) and a horizontal offset move (to align the
+electromagnet). Each of these should pulse high once to signal the desired move and
+then stay low until the 'done' signal is sent from this module. Then the next
+movement request signal may be sent. The direction assignments for the 8-bit
+normal move are detailed in the decoding module.
+
+Output: The module outputs signals to GPIO_0 which controls the motors' movements.
+There are also three seperate done signals to indicate whether the module has
+completed a normal move, a scan offset move, or a horizontal offset move.
+
+Parameters: can be controlled via the defines.v file. These include pin numbers 
+for motor control, speed of the motor, and the number of motor steps required to
+move in a certain direction.
+*/
 
 `include "defines.v"
 
-module motorMain(
+module motor_main(
 	input clk,
 	input [7:0] direction,
 	input scan_offset_move,
@@ -44,86 +34,54 @@ module motorMain(
 	input boundary_magnet_1,
 	input boundary_magnet_2,
 	input reset,
-	inout [35:0] GPIO_1,
-	output done,
+	inout [35:0] GPIO_0,
+	output reg movement_done,
 	output reg reset_done,
-	output reg offset_done,
+	output reg offset_done
+	);	
 	
-	output [17:0] LEDR,
-	output [7:0] LEDG
-	);
-	
-	assign LEDR[11:0] = steps_main;
-	assign LEDG[0] = dir_main;
-	assign LEDG[1] = dir_magnet;
-	assign LEDG[2] = done_main;
-	assign LEDG[3] = done_magnet;
-	
-	/*
-	assign LEDR[17] = state_main[3];
-	assign LEDR[16] = state_main[2];
-	assign LEDR[15] = state_main[1];
-	assign LEDR[14] = state_main[0];
-	
-	assign LEDR[13] = state_magnet[3];
-	assign LEDR[12] = state_magnet[2];
-	assign LEDR[11] = state_magnet[1];
-	assign LEDR[10] = state_magnet[0];
-	
-	assign LEDR[0] = go_main;
-	assign LEDR[1] = go_magnet;
-	assign LEDR[2] = done_main;
-	assign LEDR[3] = done_magnet;
-	assign LEDR[4] = im_done;
-	
-	assign LEDR[6] = boundary_main_1;
-	assign LEDR[7] = boundary_main_2;
-	assign LEDR[8] = boundary_magnet_1;
-	assign LEDR[9] = boundary_magnet_2;
-	*/
-	
-	
+	// if a movement is called, only the wire for the correct direction will be high
 	wire wire_N = direction[0];
-	wire wire_NW = direction[1];
-	wire wire_W = direction[2];
-	wire wire_SW = direction[3];
+	wire wire_NE = direction[1];
+	wire wire_E = direction[2];
+	wire wire_SE = direction[3];
 	wire wire_S = direction[4];
-	wire wire_SE = direction[5];
-	wire wire_E = direction[6];
-	wire wire_NE = direction[7];
+	wire wire_SW = direction[5];
+	wire wire_W = direction[6];
+	wire wire_NW = direction[7];
 	
+	// the signal to the motors to get them to rotate
 	wire [3:0] state_main;
 	wire [3:0] state_magnet;
 	
+	// signal the motor to move or not
 	reg go_main = 0;
 	reg go_magnet = 0;
 	
+	// the number of steps a motor is to move
 	reg [11:0] steps_main;
 	reg [11:0] steps_magnet;
 	
+	// signals which direction the motor is to move
+	// 1 for main is south, 0 north
+	// 1 for magnet is east, 0 west
 	reg dir_main;
 	reg dir_magnet;
-	
-	reg im_done = 0;
-	assign done = im_done;
 	
 	reg resetting = 0;
 	reg offsetting = 0;
 	
-	reg [11:0] straight_steps = `straight_steps;
-	reg [11:0] diagonal_steps = `diagonal_steps;
-	reg [11:0] scan_offset = `scan_offset;
-	reg [11:0] horizontal_steps = `horizontal_steps;
 	
-	assign GPIO_1[`red_main] = state_main[3];
-	assign GPIO_1[`blue_main] = state_main[2];
-	assign GPIO_1[`yellow_main] = state_main[1];
-	assign GPIO_1[`orange_main] = state_main[0];
+	//tanslated signal to the stepper motors
+	assign GPIO_0[`red_main] = state_main[3];
+	assign GPIO_0[`blue_main] = state_main[2];
+	assign GPIO_0[`yellow_main] = state_main[1];
+	assign GPIO_0[`orange_main] = state_main[0];
 	
-	assign GPIO_1[`red_magnet] = state_magnet[3];
-	assign GPIO_1[`blue_magnet] = state_magnet[2];
-	assign GPIO_1[`yellow_magnet] = state_magnet[1];
-	assign GPIO_1[`orange_magnet] = state_magnet[0];
+	assign GPIO_0[`red_magnet] = state_magnet[3];
+	assign GPIO_0[`blue_magnet] = state_magnet[2];
+	assign GPIO_0[`yellow_magnet] = state_magnet[1];
+	assign GPIO_0[`orange_magnet] = state_magnet[0];
 	
 	// This is the important part of the module. At every
 	// clock tick, the module first checks if the motors are
@@ -135,22 +93,32 @@ module motorMain(
 	// are converted into forward/backward directions for each
 	// motor.
 	always@(posedge clk) begin
+		//Assign the done signals according to what type of move
+		//has been requested.
 		if (resetting) reset_done <= (done_main && done_magnet);
 		else if (offsetting) offset_done <= done_magnet;
-		else if (go_main && go_magnet) im_done <= (done_main && done_magnet);
-		else if (go_main) im_done <= done_main;
-		else if (go_magnet) im_done <= done_magnet;
+		else if (go_main && go_magnet) movement_done <= (done_main && done_magnet);
+		else if (go_main) movement_done <= done_main;
+		else if (go_magnet) movement_done <= done_magnet;
+		
+		//If we are no longer moving, reset all done signals to 0.
 		if (!go_main && !go_magnet) begin
-			im_done <= 0;
+			movement_done <= 0;
 			reset_done <= 0;
 			offset_done <= 0;
 		end
-		if (im_done || reset_done || offset_done) begin
+		//If we are done, deactivate the motors.
+		if (movement_done || reset_done || offset_done) begin
 			go_main <= 0;
 			go_magnet <= 0;
 			resetting <= 0;
 			offsetting <= 0;
 		end
+		//Otherwise, activate the motors based on what type of move has
+		//been requested:
+		
+		//Reset the position of the electromagnet to (0,0),
+		//which is the northwest corner of the board.
 		else if (reset) begin
 			go_main <= 1;
 			go_magnet <= 1;
@@ -160,77 +128,90 @@ module motorMain(
 			steps_magnet <= 12'b1111_1111_1111;
 			resetting <= 1;
 		end
+		//scan offset move (aligns sensors with centers
+		//of squares)
 		else if (scan_offset_move) begin
 			go_main <= 1;
 			dir_main <= 1;
-			steps_main <= scan_offset;
+			steps_main <= `scan_offset_steps;
 		end
+		//normal scan move (essentially a "move south")
 		else if (scan_move) begin
 			go_main <= 1;
 			dir_main <= 1;
-			steps_main <= straight_steps;
+			steps_main <= `straight_steps;
 		end
+		//horizontal offset move (aligns electromagnet with
+		//center of squares)
 		else if (horizontal_offset) begin
 			go_magnet <= 1;
 			dir_magnet <= 1;
-			steps_magnet <= horizontal_steps;
+			steps_magnet <= `horizontal_offset_steps;
 			offsetting <= 1;
 		end
+		//move north
 		else if (wire_N) begin
 			go_main <= 1;
 			dir_main <= 0;
-			steps_main <= straight_steps;
+			steps_main <= `straight_steps;
 		end
+		//move south
 		else if (wire_S) begin
 			go_main <= 1;
 			dir_main <= 1;
-			steps_main <= straight_steps;
+			steps_main <= `straight_steps;
 		end
-		else if (wire_E) begin
-			go_magnet <= 1;
-			dir_magnet <= 0;
-			steps_magnet <= straight_steps;
-		end
+		//move west
 		else if (wire_W) begin
 			go_magnet <= 1;
-			dir_magnet <= 1;
-			steps_magnet <= straight_steps;
-		end
-		else if (wire_NE) begin
-			go_main <= 1;
-			go_magnet <= 1;
-			dir_main <= 0;
 			dir_magnet <= 0;
-			steps_main <= diagonal_steps;
-			steps_magnet <= diagonal_steps;
+			steps_magnet <= `straight_steps;
 		end
-		else if (wire_SE) begin
-			go_main <= 1;
+		//move east
+		else if (wire_E) begin
 			go_magnet <= 1;
-			dir_main <= 1;
-			dir_magnet <= 0;
-			steps_main <= diagonal_steps;
-			steps_magnet <= diagonal_steps;
-		end
-		else if (wire_SW) begin
-			go_main <= 1;
-			go_magnet <= 1;
-			dir_main <= 1;
 			dir_magnet <= 1;
-			steps_main <= diagonal_steps;
-			steps_magnet <= diagonal_steps;
+			steps_magnet <= `straight_steps;
 		end
+		//move northwest
 		else if (wire_NW) begin
 			go_main <= 1;
 			go_magnet <= 1;
 			dir_main <= 0;
+			dir_magnet <= 0;
+			steps_main <= `straight_steps;
+			steps_magnet <= `straight_steps;
+		end
+		//move southwest
+		else if (wire_SW) begin
+			go_main <= 1;
+			go_magnet <= 1;
+			dir_main <= 1;
+			dir_magnet <= 0;
+			steps_main <= `straight_steps;
+			steps_magnet <= `straight_steps;
+		end
+		//move southeast
+		else if (wire_SE) begin
+			go_main <= 1;
+			go_magnet <= 1;
+			dir_main <= 1;
 			dir_magnet <= 1;
-			steps_main <= diagonal_steps;
-			steps_magnet <= diagonal_steps;
+			steps_main <= `straight_steps;
+			steps_magnet <= `straight_steps;
+		end
+		//move northeast
+		else if (wire_NE) begin
+			go_main <= 1;
+			go_magnet <= 1;
+			dir_main <= 0;
+			dir_magnet <= 1;
+			steps_main <= `straight_steps;
+			steps_magnet <= `straight_steps;
 		end
 	end
 	
-	motorControl mainMotor(
+	motor_control mainMotor(
 		.clk(clk),
 		.go(go_main),
 		.direction(dir_main),
@@ -241,7 +222,7 @@ module motorMain(
 		.done(done_main)
 	);
 	
-	motorControl magnetMotor(
+	motor_control magnetMotor(
 		.clk(clk),
 		.go(go_magnet),
 		.direction(dir_magnet),

@@ -1,79 +1,73 @@
 
-// This module is for general motor control. It is
-// instantiated once for each of the two motors used
-// for the board.
-//
-// Input: The module takes a direction(forward/backward),
-// the number of steps to be moved, and an activation 
-// signal.
-//
-// Output: The module outputs the appropriate sequence
-// on state to drive the motors. It also pulses high
-// a done signal when it has finished the inputted move.
-//
-// The module works be creating an instance of both the
-// moveForward and moveBackward modules and activating
-// one depending on the inputted direction.
-//
-// Note: after numerous modifications to this code, it
-// seems that this module might be a bit superfluous and
-// could potentially be moved mostly into the main module,
-// but I have left it as it is for simplicity's sake.
+/*
+This module is for general motor control. It is instantiated once for
+each of the two motors used for the board.
+
+Input: The module takes a direction(forward/backward), the number of
+steps to be moved, and an activation signal.
+
+Output: The module outputs the appropriate sequence on "state" to
+drive the motors. It also pulses high a done signal when it has 
+finished the inputted move.
+
+The module works be creating an instance of both the move_forward and
+move_backward modules and activating one depending on the inputted direction.
+*/
 
 `include "defines.v"
 
-module motorControl(
+module motor_control(
 	input clk,
 	input go,
 	input direction,
 	input [11:0] steps,
 	input boundary1,
 	input boundary2,
-	output [3:0] state,
-	output done
+	output reg [3:0] state,
+	output reg done
 	);
 	
+	// state is the signal to the motor though its 4 input wires
 	reg [3:0] mystate = 4'b1100;
-	
-	reg im_done = 0;
-	assign done = im_done;
 	
 	wire [3:0] state_forward;
 	wire [3:0] state_backward;
 	
+	// high when the motor are to move in that direction
 	reg go_forward = 0;
-	reg go_backward = 0;
-	
-	reg [3:0] output_state;
-	assign state = output_state;
-	
+	reg go_backward = 0;	
 	
 	// At every clock tick, check if this module
 	// has been activated. If it has, then activate
 	// either the moveForward or moveBackward module
-	// and listen to that modules done signal.
+	// and listen to that module's done signal.
 	always@(posedge clk) begin
-	if (!direction) im_done <= done_forward;
-	else if (direction) im_done <= done_backward;
-	if (go) begin
-		output_state <= mystate;
-		if (!direction) begin
-			go_forward <= 1;
-			mystate <= state_forward;
+		//check if forwards movement is done
+		if (!direction) done <= done_forward;
+		//check if backwards movement is done
+		else if (direction) done <= done_backward;
+		if (go) begin
+			state <= mystate;
+			//to move forward
+			if (!direction) begin
+				go_forward <= 1;
+				mystate <= state_forward;
+			end
+			//to move backwards
+			else if (direction) begin
+				go_backward <= 1;
+				mystate <= state_backward;
+			end
 		end
-		else if (direction) begin
-			go_backward <= 1;
-			mystate <= state_backward;
+		// no movement
+		else begin
+			go_forward <= 0;
+			go_backward <= 0;
+			state <= 0;
 		end
-	end
-	else begin
-		go_forward <= 0;
-		go_backward <= 0;
-		output_state <= 0;
-	end
 	end
 	
-	moveForward mf(
+	move_forward mf(
 		.clk(clk),
 		.go(go_forward),
 		.steps(steps),
@@ -83,7 +77,7 @@ module motorControl(
 		.done(done_forward)
 		);
 		
-	moveBackward mb(
+	move_backward mb(
 		.clk(clk),
 		.go(go_backward),
 		.steps(steps),
