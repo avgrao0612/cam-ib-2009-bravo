@@ -1,4 +1,15 @@
 
+/*
+This module encodes data from the board and user inputs so that they can be sent
+through the serial bus via the async_transmitter module. It listens to output
+signals from all of the relevant modules and whenever one of them goes high,
+it encodes that signal into dataStream (which is connected to the transmitter)
+and sets data_start high to signal that valid data is being transmitted.
+Note that sometimes unwanted signals may be sent (for example, "movement done"
+signals are sent in between each row of scan data), but these are filtered out
+by the Java receiver.
+*/
+
 module encoding(
 	input clk,
 	input user_turn_done,
@@ -14,76 +25,71 @@ module encoding(
 	input new_game,
 	input [2:0] black_setting,
 	input [2:0] white_setting,
-	output [7:0] dataStream,
-	output data_start,
-	output [7:0] LEDG,
-	output LEDR
+	output reg [7:0] dataStream,
+	output reg data_start
 	);
-	
-	assign LEDG = data;
-	assign LEDR = start;
-	//assign LEDG[7] = new_game;
-	
-	reg [7:0] data = 0;
-	assign dataStream = data;
-	
-	reg start = 0;
-	assign data_start = start;
 	
 	always@(posedge clk) begin
 	//human (R)esponse
 		//(T)urn done (implies decline draw)
 		if (user_turn_done) begin
-			start <= 1;
-			data <= 8'b00000000;
+			data_start <= 1;
+			dataStream <= 8'b00000000;
 		end
 		//offer (D)raw, or accept draw
 		else if (draw) begin
-			start <= 1;
-			data <= 8'b00010000;
+			data_start <= 1;
+			dataStream <= 8'b00010000;
 		end
 		//r(E)sign
 		else if (resign) begin
-			start <= 1;
-			data <= 8'b00100000;
+			data_start <= 1;
+			dataStream <= 8'b00100000;
 		end
 		//reset done
 		else if (reset_done) begin
-			start <= 1;
-			data <= 8'b01111111;
+			data_start <= 1;
+			dataStream <= 8'b01111111;
 		end
 		//offset move done
 		else if (offset_done) begin
-			start <= 1;
-			data <= 8'b01111001;
+			data_start <= 1;
+			dataStream <= 8'b01111001;
 		end
 	//(M)ovement complete
+	//The dataStream[5:3] bits will indicate which direction the
+	//move was in.
 		else if (movement_done) begin
-			start <= 1;
-			data[7:6] <= 2'b01;
-			data[5:3] <= input_stream[5:3];
-			data[2:0] <= 3'b000;
+			data_start <= 1;
+			dataStream[7:6] <= 2'b01;
+			dataStream[5:3] <= input_stream[5:3];
+			dataStream[2:0] <= 3'b000;
 		end
 	//(S)can data
-		//left side
+		//left side of the row (5 squares)
 		else if (sending_scan_left) begin
-			start <= 1;
-			data[7:5] <= 3'b101;		//LSB is a 1 for left side
-			data[4:0] <= pieces;
+			data_start <= 1;
+			dataStream[7:5] <= 3'b101;		//LSB is a 1 for left side
+			dataStream[4:0] <= pieces;
 		end
-		//right side
+		//right side of the row (5 squares)
 		else if (sending_scan_right) begin
-			start <= 1;
-			data[7:5] <= 3'b100;		//LSB is a 0 for right side
-			data[4:0] <= pieces;
+			data_start <= 1;
+			dataStream[7:5] <= 3'b100;		//LSB is a 0 for right side
+			dataStream[4:0] <= pieces;
 		end
 	//(N)ew game
+	//The setting values are:
+	// 0: human
+	// 1: easy AI
+	// 2: normal AI
+	// 3: hard AI
 		else if (new_game) begin
-			start <= 1;
-			data[7:6] <= 2'b11;
-			data[5:3] <= black_setting;
-			data[2:0] <= white_setting;
+			data_start <= 1;
+			dataStream[7:6] <= 2'b11;
+			dataStream[5:3] <= black_setting;
+			dataStream[2:0] <= white_setting;
 		end
-		else start <= 0;
+		else data_start <= 0;
 	end
 endmodule
