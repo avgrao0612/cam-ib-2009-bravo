@@ -15,9 +15,9 @@
 
 
 QUARTUS_VERSION = "8.0"
-DATE = "16:49:12  February 25, 2009"
+DATE = "11:02:43  March 01, 2009"
 
 
 # Revisions
 
-PROJECT_REVISION = "MainTest"
+PROJECT_REVISION = "Main"
