@@ -17,6 +17,7 @@ public class Draughts {
 	private Player white;
 	GameState state;
 	BoardState bstate;
+	boolean who;
 
 	public Draughts(HWInterface h, Player b, Player w) {
 		black = b.sit(this, false);
@@ -25,17 +26,20 @@ public class Draughts {
 		board = new Board(h);
 		state = GameState.NORMAL;
 		bstate = BoardState.NORMAL;
+		who = false;
 	}
 
 	public EndGame play() {
 		while (board.hasValidTurns()) {
-			hwi.nextRound(board.who(), state);
+			hwi.nextRound(who, state);
 			switch(nextTurn()) {
 			case NORMAL:
 				if (state == GameState.NORMAL) {
 					bstate = board.applyBoardState(hwi.scan());
+					who = board.who();
 				} else {
 					state = GameState.NORMAL;
+					who = !who;
 				}
 				break;
 			case DRAW:
@@ -43,6 +47,7 @@ public class Draughts {
 					return EndGame.DRAW;
 				} else {
 					state = GameState.DRAWOFFER;
+					who = !who;
 				}
 				break;
 			case RESIGN:
@@ -54,7 +59,7 @@ public class Draughts {
 	}
 
 	private EndTurn nextTurn() {
-		return board.who()? white.doTurn(state, bstate): black.doTurn(state, bstate);
+		return who? white.doTurn(state, bstate): black.doTurn(state, bstate);
 	}
 
 	private Draughts handleWinner(EndGame end) {
