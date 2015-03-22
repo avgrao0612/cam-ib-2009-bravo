@@ -1,0 +1,1 @@
+Someone type up the spec for this... I can't find the booklet atm.
